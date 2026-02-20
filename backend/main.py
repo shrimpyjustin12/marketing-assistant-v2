@@ -7,7 +7,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from csv_processor import generate_summary
 from content_generator import generate_content, generate_content_stream
@@ -34,6 +34,7 @@ class TopItem(BaseModel):
     quantity: int
     net_sales: Optional[float] = None
     avg_price: Optional[float] = None
+    performance_tag: Optional[Dict[str, str]] = None
 
 
 class TopCategory(BaseModel):
@@ -53,64 +54,49 @@ class SalesSummary(BaseModel):
     insights: List[Insight]
 
 
-class SalesSummaryWithConfig(BaseModel):
-    top_items: List[TopItem]
-    top_categories: List[TopCategory]
-    insights: List[Insight]
+class ContentRequest(BaseModel):
     api_key: str
     model: Optional[str] = "gpt-5-mini-2025-08-07"
 
 
-class PromotionIdea(BaseModel):
-    text: str
-    reason: str
-
-class MarketingContent(BaseModel):
-    captions: List[str]
-    hashtags: List[str]
-    promotion_ideas: List[PromotionIdea]
+class SalesSummaryWithConfig(SalesSummary):
+    api_key: str
+    model: Optional[str] = "gpt-5-mini-2025-08-07"
 
 
 @app.get("/")
 async def root():
-    """Health check endpoint."""
-    return {"status": "ok", "message": "Marketing Dashboard API"}
+    return {"status": "online", "message": "Marketing Dashboard API is running"}
 
 
 @app.post("/upload-csv", response_model=SalesSummary)
 async def upload_csv(file: UploadFile = File(...)):
     """
-    Upload a CSV file and get a sales summary.
-    
-    Supports Toast Menu Breakdown format with columns:
-    Sales Category, Item Name, Quantity, Avg Price, Gross Sales, Discount Amount, Net Sales
+    Upload a CSV file and return a summary of the sales data.
     """
-    # Validate file type
     if not file.filename.endswith('.csv'):
-        raise HTTPException(status_code=400, detail="File must be a CSV")
+        raise HTTPException(status_code=400, detail="Only CSV files are supported")
     
     try:
-        # Read file content
         content = await file.read()
-        csv_content = content.decode('utf-8')
+        csv_text = content.decode('utf-8')
         
-        # Process CSV and generate summary
-        summary = generate_summary(csv_content)
+        summary_data = generate_summary(csv_text)
         
-        return summary
+        return summary_data
     
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        print(f"Error processing CSV: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing CSV: {str(e)}")
 
 
-@app.post("/generate-content", response_model=MarketingContent)
+@app.post("/generate-content")
 async def generate_marketing_content(request: SalesSummaryWithConfig):
     """
-    Generate marketing content from a sales summary (non-streaming).
+    Generate marketing content based on the sales summary.
     """
     try:
+        # Convert Pydantic models to dict for the generator
         summary_dict = {
             "top_items": [item.model_dump() for item in request.top_items],
             "top_categories": [cat.model_dump() for cat in request.top_categories],
@@ -150,16 +136,4 @@ async def generate_marketing_content_stream(request: SalesSummaryWithConfig):
         ):
             yield f"data: {chunk}\n\n"
     
-    return StreamingResponse(
-        event_generator(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-        }
-    )
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
