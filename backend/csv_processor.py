@@ -3,6 +3,7 @@ CSV Processing Module
 Parses Toast Menu Breakdown CSV data and generates trend summaries for AI content generation.
 Supports Toast POS export format with revenue data.
 """
+# UPDATED: Fixed performacne tags function - March 2026
 
 import pandas as pd
 from io import StringIO
