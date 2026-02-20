@@ -130,39 +130,20 @@ def add_performance_tags(top_items: List[Dict[str, Any]]) -> List[Dict[str, Any]
     if not top_items:
         return top_items
     
-    # Find max values for comparison
-    max_quantity = max(item['quantity'] for item in top_items)
-    max_revenue = max(item.get('net_sales', 0) for item in top_items)
-    
+    # Simple test - give EVERY item a tag to verify function runs
     tagged_items = []
     for item in top_items:
         item_with_tag = item.copy()
-        item_with_tag['performance_tag'] = None
         
-        # Top seller tag (highest quantity)
-        if item['quantity'] == max_quantity and max_quantity > 0:
+        # Test: Give Pho Beef a "TEST TAG" to verify function works
+        if item['item_name'] == "Pho Beef":
             item_with_tag['performance_tag'] = {
-                'type': 'hot',
-                'label': 'Hot Seller'
+                'type': 'test',
+                'label': '✅ TEST WORKING'
             }
-        # Premium tag (high price + good sales)
-        elif item.get('avg_price', 0) > 15 and item['quantity'] > 50:
-            item_with_tag['performance_tag'] = {
-                'type': 'premium',
-                'label': 'Premium Performer'
-            }
-        # High revenue tag
-        elif item.get('net_sales', 0) == max_revenue and max_revenue > 0 and item.get('net_sales', 0) > 0:
-            item_with_tag['performance_tag'] = {
-                'type': 'revenue',
-                'label': 'High Revenue Driver'
-            }
-        # Rising star (good quantity but not top)
-        elif item['quantity'] > (max_quantity * 0.7):  # 70% of top seller
-            item_with_tag['performance_tag'] = {
-                'type': 'rising',
-                'label': 'Rising Star'
-            }
+        else:
+            # Keep existing tags for other items (or None)
+            item_with_tag['performance_tag'] = None
             
         tagged_items.append(item_with_tag)
     
