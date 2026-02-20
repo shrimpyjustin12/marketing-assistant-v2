@@ -124,6 +124,50 @@ def get_top_items(df: pd.DataFrame, limit: int = 5) -> List[Dict[str, Any]]:
         ]
 
 
+def add_performance_tags(top_items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Add performance tags to top items based on sales data."""
+    if not top_items:
+        return top_items
+    
+    # Find max values for comparison
+    max_quantity = max(item['quantity'] for item in top_items)
+    max_revenue = max(item.get('net_sales', 0) for item in top_items)
+    
+    tagged_items = []
+    for item in top_items:
+        item_with_tag = item.copy()
+        item_with_tag['performance_tag'] = None
+        
+        # Top seller tag (highest quantity)
+        if item['quantity'] == max_quantity and max_quantity > 0:
+            item_with_tag['performance_tag'] = {
+                'type': 'hot',
+                'label': 'Hot Seller'
+            }
+        # Premium tag (high price + good sales)
+        elif item.get('avg_price', 0) > 15 and item['quantity'] > 50:
+            item_with_tag['performance_tag'] = {
+                'type': 'premium',
+                'label': 'Premium Performer'
+            }
+        # High revenue tag
+        elif item.get('net_sales', 0) == max_revenue and max_revenue > 0 and item.get('net_sales', 0) > 0:
+            item_with_tag['performance_tag'] = {
+                'type': 'revenue',
+                'label': 'High Revenue Driver'
+            }
+        # Rising star (good quantity but not top)
+        elif item['quantity'] > (max_quantity * 0.7):  # 70% of top seller
+            item_with_tag['performance_tag'] = {
+                'type': 'rising',
+                'label': 'Rising Star'
+            }
+            
+        tagged_items.append(item_with_tag)
+    
+    return tagged_items
+
+
 def get_top_categories(df: pd.DataFrame, limit: int = 5) -> List[Dict[str, Any]]:
     """Get top-selling categories by quantity and revenue."""
     if df.empty:
@@ -259,10 +303,15 @@ def generate_summary(csv_content: str) -> Dict[str, Any]:
 
     date_range = get_date_range(df)
 
+    # Get top items
+    top_items = get_top_items(df)
+    
+    # Add performance tags to top items
+    top_items_with_tags = add_performance_tags(top_items)
     
     summary = {
         "date_range": date_range,
-        "top_items": get_top_items(df),
+        "top_items": top_items_with_tags,  # Use tagged version
         "top_categories": get_top_categories(df),
         "insights": get_insights(df)
     }

@@ -413,3 +413,39 @@
     gap: 1rem;
   }
 }
+/* Performance Tags */
+.tag {
+  margin-left: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.tag.hot {
+  background: #ff5a5a22;
+  color: #ff7b7b;
+  border: 1px solid #ff5a5a44;
+}
+
+.tag.premium {
+  background: #7aa2ff22;
+  color: #a9c1ff;
+  border: 1px solid #7aa2ff44;
+}
+
+.tag.revenue {
+  background: #ffd93d22;
+  color: #ffe27a;
+  border: 1px solid #ffd93d44;
+}
+
+.tag.rising {
+  background: #00ffa622;
+  color: #63ffd1;
+  border: 1px solid #00ffa644;
+}
