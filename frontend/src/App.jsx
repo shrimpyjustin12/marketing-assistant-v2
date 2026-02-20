@@ -57,6 +57,7 @@ function App() {
       }
       
       const data = JSON.parse(text)
+      console.log("Upload response:", data) // Debug log
       setSummary(data)
       setLoadingStatus('')
     } catch (err) {
@@ -173,10 +174,10 @@ function App() {
           <section className="summary-section">
             <h2>Sales Summary</h2>
             {summary.date_range && (
-  <div className="date-range">
-    Data Period: <strong>{summary.date_range.start} – {summary.date_range.end}</strong>
-  </div>
-)}
+              <div className="date-range">
+                Data Period: <strong>{summary.date_range.start} – {summary.date_range.end}</strong>
+              </div>
+            )}
 
             <div className="summary-grid">
               <div className="summary-card">
@@ -185,17 +186,15 @@ function App() {
                   {summary.top_items.map((item, idx) => (
                     <li key={idx} className="item-row">
                       <div className="item-info">
-
                         <span className="item-name">
-  {item.item_name}
-  {item.performance_tag && (
-    <span className={`tag ${item.performance_tag.type}`}>
-      {item.performance_tag.label}
-    </span>
-  )}
-</span>
-
-
+                          {item.item_name}
+                          {/* UPDATED: Better tag rendering with fallback */}
+                          {item.performance_tag && (
+                            <span className={`tag ${item.performance_tag.type === 'test' ? 'hot' : item.performance_tag.type}`}>
+                              {item.performance_tag.label}
+                            </span>
+                          )}
+                        </span>
                         
                         {item.avg_price && (
                           <span className="item-price">{formatCurrency(item.avg_price)} avg</span>
