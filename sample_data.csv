@@ -1,0 +1,22 @@
+date,item_name,quantity_sold,category
+2025-03-01,Pho Tai,24,Noodles
+2025-03-01,Banh Mi,18,Sandwich
+2025-03-02,Pho Ga,30,Noodles
+2025-03-02,Spring Rolls,15,Appetizers
+2025-03-03,Pho Tai,28,Noodles
+2025-03-03,Banh Mi,22,Sandwich
+2025-03-04,Pho Ga,35,Noodles
+2025-03-04,Bun Bo Hue,20,Noodles
+2025-03-05,Spring Rolls,18,Appetizers
+2025-03-05,Pho Tai,32,Noodles
+2025-04-01,Pho Ga,40,Noodles
+2025-04-01,Banh Mi,25,Sandwich
+2025-04-02,Bun Bo Hue,28,Noodles
+2025-04-02,Spring Rolls,20,Appetizers
+2025-04-03,Pho Tai,38,Noodles
+2025-04-03,Banh Mi,30,Sandwich
+2025-04-04,Pho Ga,42,Noodles
+2025-04-04,Vietnamese Coffee,35,Beverages
+2025-04-05,Pho Tai,45,Noodles
+2025-04-05,Spring Rolls,22,Appetizers
+

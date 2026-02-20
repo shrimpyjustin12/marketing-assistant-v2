@@ -1,0 +1,328 @@
+.content-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.content-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: visible; /* CHANGED: from 'hidden' to 'visible' to allow tooltips to escape */
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-tertiary);
+}
+
+.card-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.card-content {
+  padding: 1.5rem;
+  overflow: visible; /* ADDED: allow tooltips to escape */
+}
+
+/* Captions */
+.caption-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+.caption-item:last-child {
+  margin-bottom: 0;
+}
+
+.caption-number {
+  width: 28px;
+  height: 28px;
+  background: var(--accent-primary);
+  color: var(--bg-primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.caption-text {
+  flex: 1;
+  color: var(--text-primary);
+  line-height: 1.6;
+  white-space: pre-line; /* ADDED: preserves line breaks in Instagram captions */
+}
+
+/* Hashtags */
+.hashtags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.hashtag {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+  color: white;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hashtag:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.hashtag:active {
+  transform: scale(0.95);
+}
+
+.hashtag-hint {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* Ideas Container */
+.ideas-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Idea Item - Tooltip Parent */
+.idea-item {
+  position: relative; /* For tooltip positioning */
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  border-left: 3px solid var(--warning);
+  cursor: help; /* Shows question mark cursor to indicate more info */
+  transition: background-color 0.2s ease;
+}
+
+.idea-item:hover {
+  background: var(--bg-hover);
+}
+
+.idea-item:last-child {
+  margin-bottom: 0;
+}
+
+.idea-icon {
+  color: var(--warning);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.idea-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.idea-text {
+  color: var(--text-primary);
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.idea-content .copy-btn {
+  align-self: flex-start;
+}
+
+/* ===== AI REASON TOOLTIP - FIXED POSITIONING ===== */
+
+.tooltip-parent {
+  position: relative;
+}
+
+.idea-tooltip {
+  position: fixed; /* Fixed positioning escapes any container */
+  width: 340px;
+  max-width: 90vw; /* Responsive on mobile */
+  
+  background: rgba(18, 18, 18, 0.98);
+  border: 1px solid rgba(0, 255, 170, 0.35);
+  border-radius: 14px;
+  padding: 16px 18px;
+  
+  font-size: 13.5px;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  color: #e8fff0;
+  
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 255, 170, 0.1) inset;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  
+  z-index: 999999;
+  
+  /* Typography improvements */
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.tooltip-parent:hover .idea-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Tooltip arrow */
+.idea-tooltip::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -6px;
+  transform: translateY(-50%) rotate(45deg);
+  width: 14px;
+  height: 14px;
+  background: rgba(18, 18, 18, 0.98);
+  border-left: 1px solid rgba(0, 255, 170, 0.35);
+  border-bottom: 1px solid rgba(0, 255, 170, 0.35);
+  border-radius: 3px 0 0 0;
+  z-index: -1;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Tooltip positioned on the left side (arrow on right) */
+.idea-tooltip.left-side::before {
+  left: auto;
+  right: -6px;
+  border-left: none;
+  border-right: 1px solid rgba(0, 255, 170, 0.35);
+  border-bottom: 1px solid rgba(0, 255, 170, 0.35);
+  border-radius: 0 3px 0 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .caption-item {
+    flex-direction: column;
+  }
+
+  .idea-item {
+    flex-direction: column;
+  }
+  
+  .idea-tooltip {
+    width: 280px;
+    padding: 12px 14px;
+    font-size: 12px;
+  }
+}
+
+/* Optional: Add a subtle glow effect for premium feel */
+.idea-tooltip strong {
+  color: #4affb5;
+  font-weight: 600;
+}
+
+.idea-tooltip .metric {
+  background: rgba(0, 255, 170, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  color: #a0ffd0;
+}
+
+/* ===== INSTAGRAM SPECIFIC STYLING ===== */
+.instagram-card .card-header {
+  background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcaf45);
+  color: white;
+  border-bottom: none;
+}
+
+.instagram-card .card-header h3 {
+  color: white;
+}
+
+.instagram-card .card-header button {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.instagram-card .card-header button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.instagram-hashtag {
+  background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcaf45) !important;
+  color: white !important;
+}
+
+.instagram-hashtag:hover {
+  box-shadow: 0 4px 12px rgba(131, 58, 180, 0.4) !important;
+}
+
+/* ===== TIKTOK SPECIFIC STYLING ===== */
+.tiktok-card .card-header {
+  background: #010101;
+  color: #00f2ea;
+  border-bottom: 2px solid #00f2ea;
+}
+
+.tiktok-card .card-header h3 {
+  color: #00f2ea;
+}
+
+.tiktok-card .card-header button {
+  background: #00f2ea;
+  color: #010101;
+  border: none;
+}
+
+.tiktok-card .card-header button:hover {
+  background: #00c4b6;
+}
+
+.tiktok-hashtag {
+  background: #00f2ea !important;
+  color: #010101 !important;
+}
+
+.tiktok-hashtag:hover {
+  box-shadow: 0 4px 12px rgba(0, 242, 234, 0.4) !important;
+}
+
+/* ===== IDEAS CARD STYLING (unchanged) ===== */
+.ideas-card .card-header {
+  background: var(--bg-tertiary);
+  border-left: 3px solid var(--warning);
+}

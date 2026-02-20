@@ -1,0 +1,16 @@
+{
+    "rewrites": [
+        {
+            "source": "/api/upload-csv", 
+            "destination": "/api"
+        },
+        {
+            "source": "/api/generate-content-stream", 
+            "destination": "/api"
+        },
+        {
+            "source": "/api/:path*", 
+            "destination": "/api"
+        }
+    ]
+}
