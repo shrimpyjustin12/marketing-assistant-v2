@@ -60,7 +60,7 @@ function App() {
 
     setLoading(true)
     setLoadingStatus('Generating marketing content...')
-    setContent('') // Clear existing content but set to empty string to show container
+    setContent('')
 
     try {
       const response = await fetch(`${API_BASE}/generate-content-stream`, {
@@ -133,11 +133,6 @@ function App() {
             <section className="summary-section card">
               <div className="card-header">
                 <h2>Sales Summary</h2>
-                {summary.date_range && (
-                  <span className="date-badge">
-                    {summary.date_range.start} - {summary.date_range.end}
-                  </span>
-                )}
               </div>
               
               <div className="summary-grid">
@@ -148,18 +143,7 @@ function App() {
                       <div key={index} className="item-row">
                         <span className="item-rank">{index + 1}</span>
                         <div className="item-info">
-                          <span className="item-name">
-                            {item.item_name}
-                            {/* --- PERFORMANCE TAG RENDERING --- */}
-                            {item.performance_tag && (
-                              <span className={`tag ${item.performance_tag.type}`}>
-                                {item.performance_tag.type === 'hot' && '🔥 '}
-                                {item.performance_tag.type === 'premium' && '💎 '}
-                                {item.performance_tag.type === 'revenue' && '📈 '}
-                                {item.performance_tag.label}
-                              </span>
-                            )}
-                          </span>
+                          <span className="item-name">{item.item_name}</span>
                           <span className="item-stats">
                             {item.quantity} units · {formatCurrency(item.net_sales)}
                           </span>
@@ -206,16 +190,7 @@ function App() {
                 disabled={loading || !settings.apiKey}
                 className="generate-button"
               >
-                {loading ? (
-                  <div className="loader-container">
-                    <div className="loader"></div>
-                    Generating...
-                  </div>
-                ) : !settings.apiKey ? (
-                  'Configure API Key First'
-                ) : (
-                  'Generate Marketing Content'
-                )}
+                {loading ? 'Generating...' : !settings.apiKey ? 'Configure API Key First' : 'Generate Marketing Content'}
               </button>
             </section>
 
