@@ -126,40 +126,42 @@ def get_top_items(df: pd.DataFrame, limit: int = 5) -> List[Dict[str, Any]]:
 
 
 def add_performance_tags(top_items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Add performance tags to top items based on sales data."""
+    """Add performance tags to top items based on sales data logic."""
     if not top_items:
         return top_items
     
-    # Find max values for comparison
+    # 1. Calculate benchmarks
     max_quantity = max(item['quantity'] for item in top_items)
     max_revenue = max(item.get('net_sales', 0) for item in top_items)
     
     tagged_items = []
     for item in top_items:
         item_with_tag = item.copy()
+        tag = None # Default to no tag
         
-        # Determine tags (can be multiple, comma-separated)
-        tags = []
+        qty = item['quantity']
+        rev = item.get('net_sales', 0)
+        price = item.get('avg_price', 0)
+
+        # 2. Priority Logic (Assigns the most important tag first)
         
-        # Hot seller (highest quantity)
-        if item['quantity'] == max_quantity and max_quantity > 0:
-            tags.append('Hot Seller')
-        
-        # Premium (high price + good sales)
-        elif item.get('avg_price', 0) > 15 and item['quantity'] > 50:
-            tags.append('Premium Performer')
-        
-        # High revenue driver
-        elif item.get('net_sales', 0) == max_revenue and max_revenue > 0:
-            tags.append('High Revenue Driver')
-        
-        # Rising star (good quantity but not top)
-        elif item['quantity'] > (max_quantity * 0.7):
-            tags.append('Rising Star')
-        
-        # Join tags with comma if multiple
-        item_with_tag['performance_tag'] = ', '.join(tags) if tags else None
+        # HOT SELLER: The absolute volume leader
+        if qty == max_quantity and qty > 0:
+            tag = {'type': 'hot', 'label': 'Hot Seller'}
             
+        # HIGH REVENUE DRIVER: The money maker (if different from hot seller)
+        elif rev == max_revenue and rev > 0:
+            tag = {'type': 'revenue', 'label': 'High Revenue Driver'}
+            
+        # PREMIUM PERFORMER: High price point with decent sales volume
+        elif price >= 15.0 and qty > (max_quantity * 0.3):
+            tag = {'type': 'premium', 'label': 'Premium Performer'}
+            
+        # RISING STAR: High volume but not the top seller
+        elif qty >= (max_quantity * 0.7) and qty < max_quantity:
+            tag = {'type': 'rising', 'label': 'Rising Star'}
+
+        item_with_tag['performance_tag'] = tag
         tagged_items.append(item_with_tag)
     
     return tagged_items
