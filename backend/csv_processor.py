@@ -130,20 +130,35 @@ def add_performance_tags(top_items: List[Dict[str, Any]]) -> List[Dict[str, Any]
     if not top_items:
         return top_items
     
-    # Simple test - give EVERY item a tag to verify function runs
+    # Find max values for comparison
+    max_quantity = max(item['quantity'] for item in top_items)
+    max_revenue = max(item.get('net_sales', 0) for item in top_items)
+    
     tagged_items = []
     for item in top_items:
         item_with_tag = item.copy()
         
-        # Test: Give Pho Beef a "TEST TAG" to verify function works
-        if item['item_name'] == "Pho Beef":
-            item_with_tag['performance_tag'] = {
-                'type': 'test',
-                'label': '✅ TEST WORKING'
-            }
-        else:
-            # Keep existing tags for other items (or None)
-            item_with_tag['performance_tag'] = None
+        # Determine tags (can be multiple, comma-separated)
+        tags = []
+        
+        # Hot seller (highest quantity)
+        if item['quantity'] == max_quantity and max_quantity > 0:
+            tags.append('Hot Seller')
+        
+        # Premium (high price + good sales)
+        elif item.get('avg_price', 0) > 15 and item['quantity'] > 50:
+            tags.append('Premium Performer')
+        
+        # High revenue driver
+        elif item.get('net_sales', 0) == max_revenue and max_revenue > 0:
+            tags.append('High Revenue Driver')
+        
+        # Rising star (good quantity but not top)
+        elif item['quantity'] > (max_quantity * 0.7):
+            tags.append('Rising Star')
+        
+        # Join tags with comma if multiple
+        item_with_tag['performance_tag'] = ', '.join(tags) if tags else None
             
         tagged_items.append(item_with_tag)
     
@@ -287,13 +302,15 @@ def generate_summary(csv_content: str) -> Dict[str, Any]:
 
     # Get top items
     top_items = get_top_items(df)
+    print(f"Got {len(top_items)} top items")  # Debug log
     
     # Add performance tags to top items
     top_items_with_tags = add_performance_tags(top_items)
+    print(f"After tagging, first item keys: {top_items_with_tags[0].keys() if top_items_with_tags else 'No items'}")  # Debug log
     
     summary = {
         "date_range": date_range,
-        "top_items": top_items_with_tags,  # Use tagged version
+        "top_items": top_items_with_tags,  # MUST use the tagged version
         "top_categories": get_top_categories(df),
         "insights": get_insights(df)
     }
