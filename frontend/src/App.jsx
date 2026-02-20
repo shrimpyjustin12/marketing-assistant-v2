@@ -5,7 +5,7 @@ import Settings from './components/Settings'
 import './App.css'
 
 // Use /api for production (Vercel), localhost for development
-const API_BASE = import.meta.env.PROD ? '/api' : 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 // Format currency
 const formatCurrency = (value) => {
