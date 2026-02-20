@@ -41,26 +41,43 @@ function App() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.detail || 'Failed to upload CSV')
+        let errorMsg = 'Failed to upload CSV'
+        try {
+          const data = await response.json()
+          errorMsg = data.detail || errorMsg
+        } catch {
+          errorMsg = `Server error: ${response.status}`
+        }
+        throw new Error(errorMsg)
       }
 
-      const data = await response.json()
+      const text = await response.text()
+      if (!text) {
+        throw new Error('Empty response from server')
+      }
+      
+      const data = JSON.parse(text)
       setSummary(data)
+      setLoadingStatus('')
     } catch (err) {
-      setError(err.message)
+      setError(err.message || 'An error occurred while uploading')
+      setSummary(null)
     } finally {
       setLoading(false)
-      setLoadingStatus('')
     }
   }
 
-  const generateMarketingContent = async () => {
-    if (!summary || !settings.apiKey) return
+  const handleGenerate = async () => {
+    if (!summary) return
+
+    if (!settings.apiKey) {
+      setError('Please configure your OpenAI API key in settings first.')
+      return
+    }
 
     setLoading(true)
-    setLoadingStatus('Generating marketing content...')
-    setContent('')
+    setLoadingStatus('Connecting to AI...')
+    setError(null)
 
     try {
       const response = await fetch(`${API_BASE}/generate-content-stream`, {
@@ -71,31 +88,49 @@ function App() {
         body: JSON.stringify({
           ...summary,
           api_key: settings.apiKey,
-          model: settings.model
+          model: settings.model,
         }),
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.detail || 'Failed to generate content')
+        const data = await response.json()
+        throw new Error(data.detail || 'Failed to generate content')
       }
 
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
-      let fullContent = ''
 
       while (true) {
-        const { value, done } = await reader.read()
+        const { done, value } = await reader.read()
         if (done) break
-        
+
         const chunk = decoder.decode(value)
-        const lines = chunk.split('\n')
-        
+        const lines = chunk.split('\n').filter(line => line.startsWith('data: '))
+
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const contentChunk = line.replace('data: ', '')
-            fullContent += contentChunk
-            setContent(fullContent)
+          try {
+            const data = JSON.parse(line.slice(6))
+            
+            if (data.error) {
+              throw new Error(data.error)
+            }
+            
+            if (data.status === 'connecting') {
+              setLoadingStatus('Connecting to AI...')
+            } else if (data.status === 'generating') {
+              setLoadingStatus('Generating marketing content...')
+            } else if (data.status === 'streaming') {
+              setLoadingStatus(`Generating content... (${data.partial} chars)`)
+            } else if (data.status === 'processing') {
+              setLoadingStatus('Processing response...')
+            } else if (data.status === 'complete') {
+              setContent(data.data)
+              setLoadingStatus('')
+            }
+          } catch (parseErr) {
+            if (parseErr.message !== "Unexpected end of JSON input") {
+              throw parseErr
+            }
           }
         }
       }
@@ -110,94 +145,124 @@ function App() {
   return (
     <div className="app">
       <header className="header">
-        <div className="header-top">
-          <div className="header-content">
+        <div className="header-content">
+          <div className="header-top">
             <h1>Marketing Dashboard</h1>
-            <p>Transform your Toast sales data into marketing gold</p>
+            <Settings onSettingsChange={handleSettingsChange} />
           </div>
-          <Settings onSettingsChange={handleSettingsChange} />
+          <p>Transform your sales data into engaging social media content</p>
         </div>
       </header>
 
       <main className="main">
-        {!summary && (
-          <div className="upload-container">
-            <CsvUpload onUpload={handleUpload} loading={loading} />
+        <section className="upload-section">
+          <CsvUpload onUpload={handleUpload} loading={loading} />
+        </section>
+
+        {error && (
+          <div className="error-message">
+            <span className="error-icon">!</span>
+            <div className="error-content">
+              <strong>Error</strong>
+              <p>{error}</p>
+            </div>
           </div>
         )}
 
-        {error && <div className="error-message">{error}</div>}
-
         {summary && (
-          <div className="dashboard-grid">
-            <section className="summary-section card">
-              <div className="card-header">
-                <h2>Sales Summary</h2>
+          <section className="summary-section">
+            <h2>Sales Summary</h2>
+            {summary.date_range && (
+              <div className="date-range">
+                Data Period: <strong>{summary.date_range.start} – {summary.date_range.end}</strong>
               </div>
-              
-              <div className="summary-grid">
-                <div className="top-items">
-                  <h3>Top 5 Items</h3>
-                  <div className="items-list">
-                    {summary.top_items.map((item, index) => (
-                      <div key={index} className="item-row">
-                        <span className="item-rank">{index + 1}</span>
-                        <div className="item-info">
-                          <span className="item-name">{item.item_name}</span>
-                          <span className="item-stats">
-                            {item.quantity} units · {formatCurrency(item.net_sales)}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="top-categories">
-                  <h3>Revenue by Category</h3>
-                  <div className="categories-list">
-                    {summary.top_categories.map((cat, index) => (
-                      <div key={index} className="category-row">
-                        <span className="category-name">{cat.category}</span>
-                        <div className="category-bar-container">
-                          <div 
-                            className="category-bar" 
-                            style={{ 
-                              width: `${(cat.net_sales / summary.top_categories[0].net_sales) * 100}%` 
-                            }}
-                          ></div>
-                        </div>
-                        <span className="category-value">{formatCurrency(cat.net_sales)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="insights-section">
-                <h3>Quick Insights</h3>
-                <div className="insights-grid">
-                  {summary.insights.map((insight, index) => (
-                    <div key={index} className={`insight-card ${insight.type}`}>
-                      <p>{insight.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <button 
-                onClick={generateMarketingContent} 
-                disabled={loading || !settings.apiKey}
-                className="generate-button"
-              >
-                {loading ? 'Generating...' : !settings.apiKey ? 'Configure API Key First' : 'Generate Marketing Content'}
-              </button>
-            </section>
-
-            {content !== null && (
-              <ContentDisplay content={content} loading={loading && content === ''} />
             )}
-          </div>
+
+            <div className="summary-grid">
+              <div className="summary-card">
+                <h3>Top Items</h3>
+                <ul>
+                  {summary.top_items.map((item, idx) => (
+                    <li key={idx} className="item-row">
+                      <div className="item-info">
+                        <span className="item-name">
+                          {item.item_name}
+                          {item.performance_tag && (
+                            <span className={`tag ${item.performance_tag.type}`}>
+                              {item.performance_tag.label}
+                            </span>
+                          )}
+                        </span>
+                        
+                        {item.avg_price && (
+                          <span className="item-price">{formatCurrency(item.avg_price)} avg</span>
+                        )}
+                      </div>
+                      <div className="item-stats">
+                        <span className="item-quantity">{item.quantity || item.total_sold} units</span>
+                        {item.net_sales && (
+                          <span className="item-revenue">{formatCurrency(item.net_sales)}</span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="summary-card">
+                <h3>Top Categories</h3>
+                <ul>
+                  {summary.top_categories.map((cat, idx) => (
+                    <li key={idx} className="item-row">
+                      <span className="item-name">{cat.category}</span>
+                      <div className="item-stats">
+                        <span className="item-quantity">{cat.quantity || cat.total_sold} units</span>
+                        {cat.net_sales && (
+                          <span className="item-revenue">{formatCurrency(cat.net_sales)}</span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="summary-card insights-card">
+                <h3>Key Insights</h3>
+                <ul>
+                  {summary.insights && summary.insights.map((insight, idx) => (
+                    <li key={idx} className="insight-item">
+                      <span className={`insight-badge ${insight.type}`}>
+                        {insight.type === 'bestseller' && '🏆'}
+                        {insight.type === 'revenue' && '💰'}
+                        {insight.type === 'top_revenue' && '📈'}
+                        {insight.type === 'discount' && '🏷️'}
+                        {insight.type === 'premium' && '⭐'}
+                        {insight.type === 'trend' && '📊'}
+                      </span>
+                      <span className="insight-text">{insight.text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <button
+              className="generate-btn"
+              onClick={handleGenerate}
+              disabled={loading || !settings.apiKey}
+            >
+              {loading ? (
+                <div className="btn-loading">
+                  <div className="btn-spinner"></div>
+                  <span>{loadingStatus || 'Processing...'}</span>
+                </div>
+              ) : !settings.apiKey ? (
+                'Configure API Key First'
+              ) : (
+                'Generate Marketing Content'
+              )}
+            </button>
+          </section>
         )}
 
         {loading && loadingStatus && !content && summary && (
@@ -216,10 +281,17 @@ function App() {
             <p className="loading-hint">This may take a few seconds...</p>
           </div>
         )}
+
+        {content && (
+          <section className="content-section">
+            <h2>Generated Content</h2>
+            <ContentDisplay content={content} />
+          </section>
+        )}
       </main>
 
       <footer className="footer">
-        <p>© 2026 Marketing Dashboard for Toast POS</p>
+        <p>Marketing Dashboard MVP • Using {settings.model || 'gpt-5-mini-2025-08-07'}</p>
       </footer>
     </div>
   )
