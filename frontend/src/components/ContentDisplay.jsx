@@ -133,7 +133,7 @@ function ContentDisplay({ content }) {
       {/* Promotion Ideas */}
       <div className="content-card ideas-card">
         <div className="card-header">
-          <h3>💡 Promotion Ideas</h3>
+          <h3>⚡ Top 3 Recommended Actions</h3>
           <CopyButton text={content.promotion_ideas?.map(i => i.text).join('\n\n') || ''} />
         </div>
 
