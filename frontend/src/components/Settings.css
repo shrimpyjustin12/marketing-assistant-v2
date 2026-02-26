@@ -192,3 +192,40 @@
   }
 }
 
+.balance-section {
+  margin: 0.5rem 0 1rem 0;
+  padding: 0.75rem;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent-primary);
+}
+
+.balance-loading {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.balance-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.balance-ok {
+  color: #4affb5;
+  font-weight: 600;
+  margin: 0;
+}
+
+.balance-plan {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.balance-error {
+  color: var(--error);
+  font-size: 0.9rem;
+  margin: 0;
+}
