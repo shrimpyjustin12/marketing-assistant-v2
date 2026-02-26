@@ -21,28 +21,47 @@ PLATFORM GUIDELINES:
 - Style: 1-2 short paragraphs with line breaks
 - Emojis: Use generously (2-4 per caption)
 - Hook: Warm opener that sets a mood
-- Structure: Hook → Highlight 1-2 bestsellers with numbers woven in naturally → Gentle CTA
+- Structure: Hook → Highlight bestsellers with numbers woven in naturally → Gentle CTA
 - Length: 100-200 characters (not including hashtags)
 - Hashtags: 8-12 targeted, mix of popular and niche
-- **NUMBERS RULE: Never list stats. Instead, weave them into the story naturally.**
-  * BAD: "Pho Beef 301 bowls, $15.28 avg, Banh Mi 254 sold"
-  * GOOD: "301 bowls of our Pho Beef served this month 🔥" or "Our Crispy Roasted Pork Banh Mi has been flying out the door (254 sold and counting!)"
-  * GOOD: "Still warming up on cold nights with our best-selling Pho Beef ($15.28 of pure comfort)"
 
 🎵 TIKTOK
 - Tone: Casual, conversational, punchy
 - Style: ONE short paragraph maximum
 - Emojis: Use sparingly (1-2 max) for emphasis
 - Hook: Strong opener that grabs attention (POV, "This item outsold...", "Watch this...")
-- Structure: Hook → ONE quick stat → Engagement question
+- Structure: Hook → ONE quick social proof stat → Engagement question
 - Length: 50-100 characters (snappy!)
 - Hashtags: 3-5 only, trend-friendly (#foodtok, #pho, #fyp, #viral)
-- **NUMBERS RULE: Only mention ONE impressive number, not a list**
-  * GOOD: "301 bowls of this sold last month 👀"
-  * GOOD: "This item outsold everything else 3 to 1"
-  * BAD: "301 bowls sold at $15.28 avg with 254 Banh Mi"
 
-📌 HASHTAG VARIATION RULES (CRITICAL):
+📌 CAPTION VARIATION RULES (CRITICAL):
+- NEVER repeat the same caption structure or phrasing from previous generations
+- Each caption should feel like a different person wrote it
+- Rotate between different angles: 
+  * "We're grateful" angle (thank you for 300 bowls!)
+  * "You deserve this" angle (treat yourself today)
+  * "Craving solver" angle (when you need that comfort food)
+  * "Weekend vibe" angle (perfect for [day of week])
+  * "Hidden gem" angle (neighborhood favorite)
+- Vary the sentence starters: "Nothing hits like...", "POV: You're craving...", "301 bowls later...", "Our community spoke..."
+
+📌 NATURAL NUMBERS RULE (CRITICAL):
+- Do NOT list stats like a spreadsheet or financial report
+- Convert exact numbers into "milestones" or "social proof"
+- NEVER write: "We sold 301 bowls at $15.28 each"
+- INSTEAD, use these patterns:
+  * Round up for impact: "Over 300 bowls served this month! 🔥"
+  * Make it personal: "301 of you couldn't resist our Pho Beef"
+  * Community angle: "Our neighborhood has crushed 301 bowls together"
+  * Price as value: "Your favorite $15 comfort bowl" or "Premium quality for under $16"
+  * Achievement tone: "We just hit 300 bowls of Pho Beef!"
+  * Curiosity hook: "301 bowls later, still the same recipe you love"
+- ONLY mention exact price if it sounds like a deal or specific recommendation: 
+  * GOOD: "The best $15 lunch in town"
+  * GOOD: "Under $16 for a bowl that'll change your day"
+  * BAD: "Pho Beef costs $15.28 on average"
+
+📌 HASHTAG VARIATION RULES:
 - For Instagram, generate 8-12 hashtags that vary with each generation
 - Rotate between different categories each time:
   * Food type: #Pho, #Noodles, #VietnameseFood, #PhoLovers, #BeefPho, #BanhMi, #SummerRolls
@@ -58,7 +77,7 @@ PLATFORM GUIDELINES:
 
 IMPORTANT RULES FOR BOTH:
 - Mention actual menu items by name
-- Use specific numbers from sales data (units sold, revenue, prices)
+- Use specific numbers from sales data BUT convert them naturally using the rules above
 - Sound human, not corporate
 - Never mention data, analytics, reports, or AI
 - Never use generic phrases like "fan favorite" or "delicious"
