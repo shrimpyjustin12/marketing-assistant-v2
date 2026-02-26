@@ -21,45 +21,39 @@ function Settings({ onSettingsChange }) {
 
   // 4. Balance checker function
   const checkBalance = async (keyToCheck = apiKey) => {
-    if (!keyToCheck || keyToCheck.length < 10) return
-    
-    setCheckingBalance(true)
-    try {
-      const response = await fetch('https://api.openai.com/v1/dashboard/billing/subscription', {
-        headers: {
-          'Authorization': `Bearer ${keyToCheck}`
-        }
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        // You can also fetch usage data
-        const usageResponse = await fetch('https://api.openai.com/v1/dashboard/billing/usage', {
-          headers: {
-            'Authorization': `Bearer ${keyToCheck}`
-          }
-        })
-        
-        if (usageResponse.ok) {
-          const usageData = await usageResponse.json()
-          setBalance({
-            plan: data.plan?.title || 'Pay-as-you-go',
-            expires: data.access_until ? new Date(data.access_until * 1000).toLocaleDateString() : 'N/A',
-            // You can add more fields if needed
-          })
-        } else {
-          setBalance({ plan: 'Valid key', expires: 'Unknown' })
-        }
-      } else {
-        setBalance({ error: 'Invalid key or no access' })
+  if (!keyToCheck || keyToCheck.length < 10) return
+  
+  setCheckingBalance(true)
+  try {
+    // Instead of billing, we ask for the list of models. 
+    // This is a standard API request that works with any valid key.
+    const response = await fetch('https://api.openai.com/v1/models', {
+      headers: {
+        'Authorization': `Bearer ${keyToCheck}`
       }
-    } catch (err) {
-      console.log('Could not fetch balance')
-      setBalance({ error: 'Could not verify' })
-    } finally {
-      setCheckingBalance(false)
+    })
+    
+    if (response.ok) {
+      // If we got here, the key is 100% valid and working
+      setBalance({
+        plan: 'API Key Valid',
+        status: 'Active',
+      })
+    } else {
+      const errorData = await response.json();
+      // Specifically check for "insufficient_quota" (Balance is $0)
+      if (errorData.error?.code === 'insufficient_quota') {
+        setBalance({ error: 'Balance Empty (Top up required)' })
+      } else {
+        setBalance({ error: 'Invalid Key' })
+      }
     }
+  } catch (err) {
+    setBalance({ error: 'Connection Error' })
+  } finally {
+    setCheckingBalance(false)
   }
+}
 
   const handleSave = () => {
     localStorage.setItem('openai_api_key', apiKey)
