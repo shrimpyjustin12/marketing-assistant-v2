@@ -6,8 +6,8 @@ function Settings({ onSettingsChange }) {
   const [apiKey, setApiKey] = useState('')
   const [model, setModel] = useState('gpt-5-mini-2025-08-07')
   const [saved, setSaved] = useState(false)
-  const [balance, setBalance] = useState(null) // 1. Add balance state
-  const [checkingBalance, setCheckingBalance] = useState(false) // 2. Loading state for balance check
+  const [balance, setBalance] = useState(null)
+  const [checkingBalance, setCheckingBalance] = useState(false)
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -16,58 +16,73 @@ function Settings({ onSettingsChange }) {
     setApiKey(savedKey)
     setModel(savedModel)
     onSettingsChange({ apiKey: savedKey, model: savedModel })
-    if (savedKey) checkBalance(savedKey) // 3. Check balance if key exists
+    if (savedKey) checkBalance(savedKey)
   }, [])
 
-  // 4. Balance checker function
+  // UPDATED: This now fetches actual usage ($ spent)
   const checkBalance = async (keyToCheck = apiKey) => {
-  if (!keyToCheck || keyToCheck.length < 10) return
-  
-  setCheckingBalance(true)
-  try {
-    // Instead of billing, we ask for the list of models. 
-    // This is a standard API request that works with any valid key.
-    const response = await fetch('https://api.openai.com/v1/models', {
-      headers: {
-        'Authorization': `Bearer ${keyToCheck}`
-      }
-    })
+    if (!keyToCheck || keyToCheck.length < 10) return
     
-    if (response.ok) {
-      // If we got here, the key is 100% valid and working
-      setBalance({
-        plan: 'API Key Valid',
-        status: 'Active',
+    setCheckingBalance(true)
+    try {
+      // Get dates for the current month
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      const today = now.toISOString().split('T')[0];
+
+      // Fetch usage data (This is usually allowed by standard keys)
+      const response = await fetch(`https://api.openai.com/v1/dashboard/billing/usage?start_date=${firstDay}&end_date=${today}`, {
+        headers: {
+          'Authorization': `Bearer ${keyToCheck}`
+        }
       })
-    } else {
-      const errorData = await response.json();
-      // Specifically check for "insufficient_quota" (Balance is $0)
-      if (errorData.error?.code === 'insufficient_quota') {
-        setBalance({ error: 'Balance Empty (Top up required)' })
+      
+      if (response.ok) {
+        const data = await response.json()
+        // OpenAI returns usage in cents (1/100th of a cent), so we divide by 100
+        const totalSpent = data.total_usage ? (data.total_usage / 100).toFixed(2) : "0.00";
+        
+        setBalance({
+          spent: `$${totalSpent}`,
+          status: 'Active',
+          info: 'Spent this month'
+        })
       } else {
-        setBalance({ error: 'Invalid Key' })
+        // Fallback: If usage is blocked, just check if key is alive
+        const ping = await fetch('https://api.openai.com/v1/models', {
+          headers: { 'Authorization': `Bearer ${keyToCheck}` }
+        })
+        if (ping.ok) {
+          setBalance({ status: 'Active', info: 'Balance hidden by OpenAI' })
+        } else {
+          const errorData = await response.json();
+          if (errorData.error?.code === 'insufficient_quota') {
+            setBalance({ error: 'Balance Empty (Top up required)' })
+          } else {
+            setBalance({ error: 'Invalid Key' })
+          }
+        }
       }
+    } catch (err) {
+      setBalance({ error: 'Connection Error' })
+    } finally {
+      setCheckingBalance(false)
     }
-  } catch (err) {
-    setBalance({ error: 'Connection Error' })
-  } finally {
-    setCheckingBalance(false)
   }
-}
 
   const handleSave = () => {
     localStorage.setItem('openai_api_key', apiKey)
     localStorage.setItem('openai_model', model)
     onSettingsChange({ apiKey, model })
     setSaved(true)
-    checkBalance() // 5. Check balance when saving new key
+    checkBalance()
     setTimeout(() => setSaved(false), 2000)
   }
 
   const handleClear = () => {
     setApiKey('')
     setModel('gpt-5-mini-2025-08-07')
-    setBalance(null) // 6. Clear balance when clearing key
+    setBalance(null)
     localStorage.removeItem('openai_api_key')
     localStorage.removeItem('openai_model')
     onSettingsChange({ apiKey: '', model: 'gpt-5-mini-2025-08-07' })
@@ -114,7 +129,7 @@ function Settings({ onSettingsChange }) {
               <p className="form-hint">Your API key is stored locally in your browser</p>
             </div>
 
-            {/* 7. Balance display section */}
+            {/* UPDATED: Displays the Actual Dollars Spent */}
             {apiKey && (
               <div className="balance-section">
                 {checkingBalance ? (
@@ -124,8 +139,21 @@ function Settings({ onSettingsChange }) {
                     <p className="balance-error">⚠️ {balance.error}</p>
                   ) : (
                     <div className="balance-info">
-                      <p className="balance-ok">✅ API Key Active</p>
-                      {balance.plan && <p className="balance-plan">Plan: {balance.plan}</p>}
+                      <p className="balance-ok">✅ API Active</p>
+                      {balance.spent && (
+                        <p className="balance-spent">
+                          Spent this month: <strong>{balance.spent}</strong>
+                        </p>
+                      )}
+                      <p className="balance-detail">{balance.info}</p>
+                      <a 
+                        href="https://platform.openai.com/settings/organization/billing/overview" 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="balance-link"
+                      >
+                        Check Full Balance ↗
+                      </a>
                     </div>
                   )
                 ) : null}
@@ -141,13 +169,10 @@ function Settings({ onSettingsChange }) {
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
               />
-              <p className="form-hint">e.g., gpt-4o-mini, gpt-4o, gpt-3.5-turbo</p>
             </div>
 
             <div className="settings-actions">
-              <button className="clear-btn" onClick={handleClear}>
-                Clear
-              </button>
+              <button className="clear-btn" onClick={handleClear}>Clear</button>
               <button className={`save-btn ${saved ? 'saved' : ''}`} onClick={handleSave}>
                 {saved ? 'Saved!' : 'Save Settings'}
               </button>
