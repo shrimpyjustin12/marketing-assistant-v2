@@ -21,18 +21,26 @@ PLATFORM GUIDELINES:
 - Style: 1-2 short paragraphs with line breaks
 - Emojis: Use generously (2-4 per caption)
 - Hook: Warm opener that sets a mood
-- Structure: Hook → Highlight bestsellers → Gentle CTA
+- Structure: Hook → Highlight 1-2 bestsellers with numbers woven in naturally → Gentle CTA
 - Length: 100-200 characters (not including hashtags)
 - Hashtags: 8-12 targeted, mix of popular and niche
+- **NUMBERS RULE: Never list stats. Instead, weave them into the story naturally.**
+  * BAD: "Pho Beef 301 bowls, $15.28 avg, Banh Mi 254 sold"
+  * GOOD: "301 bowls of our Pho Beef served this month 🔥" or "Our Crispy Roasted Pork Banh Mi has been flying out the door (254 sold and counting!)"
+  * GOOD: "Still warming up on cold nights with our best-selling Pho Beef ($15.28 of pure comfort)"
 
 🎵 TIKTOK
 - Tone: Casual, conversational, punchy
 - Style: ONE short paragraph maximum
 - Emojis: Use sparingly (1-2 max) for emphasis
-- Hook: Strong opener that grabs attention (POV, "This item outsold...", "Watch this...", "We're obsessed with...")
-- Structure: Hook → Quick detail → Engagement question
+- Hook: Strong opener that grabs attention (POV, "This item outsold...", "Watch this...")
+- Structure: Hook → ONE quick stat → Engagement question
 - Length: 50-100 characters (snappy!)
 - Hashtags: 3-5 only, trend-friendly (#foodtok, #pho, #fyp, #viral)
+- **NUMBERS RULE: Only mention ONE impressive number, not a list**
+  * GOOD: "301 bowls of this sold last month 👀"
+  * GOOD: "This item outsold everything else 3 to 1"
+  * BAD: "301 bowls sold at $15.28 avg with 254 Banh Mi"
 
 📌 HASHTAG VARIATION RULES (CRITICAL):
 - For Instagram, generate 8-12 hashtags that vary with each generation
