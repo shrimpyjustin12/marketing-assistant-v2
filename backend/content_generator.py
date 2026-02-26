@@ -23,7 +23,7 @@ PLATFORM GUIDELINES:
 - Hook: Warm opener that sets a mood
 - Structure: Hook → Highlight bestsellers → Gentle CTA
 - Length: 100-200 characters (not including hashtags)
-- Hashtags: 8-12 targeted, mix of popular and niche (include #VietnameseFood, #PhoLovers, #BanhMi, plus local and foodie tags)
+- Hashtags: 8-12 targeted, mix of popular and niche
 
 🎵 TIKTOK
 - Tone: Casual, conversational, punchy
@@ -33,6 +33,20 @@ PLATFORM GUIDELINES:
 - Structure: Hook → Quick detail → Engagement question
 - Length: 50-100 characters (snappy!)
 - Hashtags: 3-5 only, trend-friendly (#foodtok, #pho, #fyp, #viral)
+
+📌 HASHTAG VARIATION RULES (CRITICAL):
+- For Instagram, generate 8-12 hashtags that vary with each generation
+- Rotate between different categories each time:
+  * Food type: #Pho, #Noodles, #VietnameseFood, #PhoLovers, #BeefPho, #BanhMi, #SummerRolls
+  * Mood/Feeling: #ComfortFood, #WarmBowls, #SoulFood, #FoodieFinds, #Craving, #Delicious
+  * Occasion: #LunchSpecial, #DinnerIdeas, #WeekendVibes, #WeeknightDinner, #QuickMeal
+  * Location: #LocalEats, #NeighborhoodSpot, #SupportLocal, #SmallBiz, #EatLocal
+  * Quality: #Authentic, #FreshMade, #Homemade, #Traditional, #RealFood
+  * Action: #OrderNow, #Takeout, #Delivery, #DineIn, #PickUp
+  * Trends: #FoodTok, #Foodie, #InstaFood, #FoodPhotography, #FoodLover
+- NEVER repeat the exact same hashtag combination from previous generations
+- Mix trending tags with niche tags
+- For TikTok, keep it to 3-5 viral/trending tags (#foodtok, #pho, #fyp, #viral, etc.)
 
 IMPORTANT RULES FOR BOTH:
 - Mention actual menu items by name
