@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react' // 1. Added useEffect here
 import CsvUpload from './components/CsvUpload'
 import ContentDisplay from './components/ContentDisplay'
 import Settings from './components/Settings'
@@ -21,8 +21,20 @@ function App() {
   const [error, setError] = useState(null)
   const [settings, setSettings] = useState({ apiKey: '', model: 'gpt-5-mini-2025-08-07' })
 
+  // 2. Load the key from the browser storage as soon as the app opens
+  useEffect(() => {
+    const savedKey = localStorage.getItem('marketing_api_key');
+    if (savedKey) {
+      setSettings(prev => ({ ...prev, apiKey: savedKey }));
+    }
+  }, []);
+
+  // 3. Save the key whenever it changes
   const handleSettingsChange = (newSettings) => {
-    setSettings(newSettings)
+    setSettings(newSettings);
+    if (newSettings.apiKey) {
+      localStorage.setItem('marketing_api_key', newSettings.apiKey);
+    }
   }
 
   const handleUpload = async (file) => {
