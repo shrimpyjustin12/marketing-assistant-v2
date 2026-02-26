@@ -19,18 +19,18 @@ function Settings({ onSettingsChange }) {
     if (savedKey) checkBalance(savedKey)
   }, [])
 
-  // UPDATED: This now fetches actual usage ($ spent)
+  // The logic to fetch actual usage ($ spent)
   const checkBalance = async (keyToCheck = apiKey) => {
     if (!keyToCheck || keyToCheck.length < 10) return
     
     setCheckingBalance(true)
     try {
-      // Get dates for the current month
+      // Get current month dates for the usage report
       const now = new Date();
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
       const today = now.toISOString().split('T')[0];
 
-      // Fetch usage data (This is usually allowed by standard keys)
+      // Request usage dollars spent this month
       const response = await fetch(`https://api.openai.com/v1/dashboard/billing/usage?start_date=${firstDay}&end_date=${today}`, {
         headers: {
           'Authorization': `Bearer ${keyToCheck}`
@@ -39,7 +39,7 @@ function Settings({ onSettingsChange }) {
       
       if (response.ok) {
         const data = await response.json()
-        // OpenAI returns usage in cents (1/100th of a cent), so we divide by 100
+        // OpenAI returns usage in cents/units, divided by 100 for dollars
         const totalSpent = data.total_usage ? (data.total_usage / 100).toFixed(2) : "0.00";
         
         setBalance({
@@ -48,7 +48,7 @@ function Settings({ onSettingsChange }) {
           info: 'Spent this month'
         })
       } else {
-        // Fallback: If usage is blocked, just check if key is alive
+        // Fallback: If usage endpoint is blocked, check if key is alive via models list
         const ping = await fetch('https://api.openai.com/v1/models', {
           headers: { 'Authorization': `Bearer ${keyToCheck}` }
         })
@@ -75,7 +75,7 @@ function Settings({ onSettingsChange }) {
     localStorage.setItem('openai_model', model)
     onSettingsChange({ apiKey, model })
     setSaved(true)
-    checkBalance()
+    checkBalance() 
     setTimeout(() => setSaved(false), 2000)
   }
 
@@ -126,33 +126,33 @@ function Settings({ onSettingsChange }) {
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
               />
-              <p className="form-hint">Your API key is stored locally in your browser</p>
+              <p className="form-hint">Stored securely in your local browser</p>
             </div>
 
-            {/* UPDATED: Displays the Actual Dollars Spent */}
+            {/* BALANCE DISPLAY SECTION */}
             {apiKey && (
-              <div className="balance-section">
+              <div className="balance-section" style={{ margin: '10px 0', padding: '10px', background: '#f8f9fa', borderRadius: '4px' }}>
                 {checkingBalance ? (
-                  <p className="balance-loading">Checking balance...</p>
+                  <p className="balance-loading">Checking system status...</p>
                 ) : balance ? (
                   balance.error ? (
-                    <p className="balance-error">⚠️ {balance.error}</p>
+                    <p className="balance-error" style={{ color: '#dc3545', fontSize: '0.85rem' }}>⚠️ {balance.error}</p>
                   ) : (
                     <div className="balance-info">
-                      <p className="balance-ok">✅ API Active</p>
+                      <p className="balance-ok" style={{ color: '#28a745', fontWeight: 'bold', margin: '0' }}>✅ API Active</p>
                       {balance.spent && (
-                        <p className="balance-spent">
+                        <p className="balance-spent" style={{ margin: '5px 0', fontSize: '1.1rem' }}>
                           Spent this month: <strong>{balance.spent}</strong>
                         </p>
                       )}
-                      <p className="balance-detail">{balance.info}</p>
+                      <p className="balance-detail" style={{ fontSize: '0.75rem', color: '#666' }}>{balance.info}</p>
                       <a 
                         href="https://platform.openai.com/settings/organization/billing/overview" 
                         target="_blank" 
                         rel="noreferrer"
-                        className="balance-link"
+                        style={{ fontSize: '0.75rem', color: '#007bff', textDecoration: 'none' }}
                       >
-                        Check Full Balance ↗
+                        Click to view Credits remaining ↗
                       </a>
                     </div>
                   )
@@ -165,7 +165,6 @@ function Settings({ onSettingsChange }) {
               <input
                 id="model"
                 type="text"
-                placeholder="gpt-5-mini-2025-08-07"
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
               />
