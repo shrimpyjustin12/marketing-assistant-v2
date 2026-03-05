@@ -294,27 +294,201 @@ def get_date_range(df: pd.DataFrame) -> Optional[Dict[str, str]]:
 def generate_summary(csv_content: str) -> Dict[str, Any]:
     """
     Main function to process CSV and generate a structured summary.
-    
-    Returns:
-        Dictionary with top_items, top_categories, and insights
+
+    Returns a dictionary with:
+      - date_range
+      - top_items (top 5, tagged)
+      - all_items (FULL list, tagged)
+      - top_categories
+      - insights
     """
+
     df = parse_csv(csv_content)
 
     date_range = get_date_range(df)
 
-    # Get top items
-    top_items = get_top_items(df)
+    # -----------------------------
+    # 1) Build ALL items (full list)
+    # -----------------------------
+    # IMPORTANT: adjust these column names if your CSV uses different ones
+    ITEM_COL = "item_name"
+
+    # Pick the quantity column safely
+    # Common possibilities: quantity_sold, quantity, total_sold
+    if "quantity_sold" in df.columns:
+        QTY_COL = "quantity_sold"
+    elif "quantity" in df.columns:
+        QTY_COL = "quantity"
+    elif "total_sold" in df.columns:
+        QTY_COL = "total_sold"
+    else:
+        raise ValueError(
+            f"Could not find a quantity column. Columns found: {list(df.columns)}. "
+            "Expected one of: quantity_sold, quantity, total_sold"
+        )
+
+    # Group and aggregate quantities for all items
+    all_items_df = (
+        df.groupby(ITEM_COL, dropna=False)[QTY_COL]
+        .sum()
+        .reset_index()
+        .rename(columns={QTY_COL: "quantity"})
+    )
+
+    # Clean item names (prevents mismatch like trailing spaces)
+    all_items_df[ITEM_COL] = (
+        all_items_df[ITEM_COL]
+        .astype(str)
+        .str.strip()
+    )
+
+    # Sort descending by quantity
+    all_items_df = all_items_df.sort_values("quantity", ascending=False)
+
+    # Convert to list[dict]
+    all_items = [
+        {"item_name": row[ITEM_COL], "quantity": int(row["quantity"])}
+        for _, row in all_items_df.iterrows()
+    ]
+
+    # -----------------------------
+    # 2) Create TOP items from ALL
+    # -----------------------------
+    top_items = all_items[:5]
     print(f"Got {len(top_items)} top items")  # Debug log
-    
-    # Add performance tags to top items
+
+    # -----------------------------------------
+    # 3) Add performance tags to BOTH lists
+    # -----------------------------------------
     top_items_with_tags = add_performance_tags(top_items)
-    print(f"After tagging, first item keys: {top_items_with_tags[0].keys() if top_items_with_tags else 'No items'}")  # Debug log
-    
+    all_items_with_tags = add_performance_tags(all_items)
+
+    print(
+        f"After tagging, first item keys: "
+        f"{top_items_with_tags[0].keys() if top_items_with_tags else 'No items'}"
+    )  # Debug log
+
+    # -----------------------------
+    # 4) Build final summary object
+    # -----------------------------
     summary = {
         "date_range": date_range,
-        "top_items": top_items_with_tags,  # MUST use the tagged version
+        "top_items": top_items_with_tags,          # top 5 (tagged)
+        "all_items": all_items_with_tags,          # ✅ full list (tagged)
         "top_categories": get_top_categories(df),
-        "insights": get_insights(df)
+        "insights": get_insights(df),
     }
-    
+
     return summary
+
+'''def compare_summaries(prev, curr):
+    comparison = []
+
+    prev_items = {i["item_name"]: i for i in prev["top_items"]}
+    curr_items = {i["item_name"]: i for i in curr["top_items"]}
+
+    for name, curr_item in curr_items.items():
+        if name in prev_items:
+            prev_qty = prev_items[name]["quantity"]
+            curr_qty = curr_item["quantity"]
+
+            if prev_qty > 0:
+                change = ((curr_qty - prev_qty) / prev_qty) * 100
+
+                comparison.append({
+                    "item": name,
+                    "previous": prev_qty,
+                    "current": curr_qty,
+                    "percent_change": round(change, 1)
+                })
+
+    return comparison'''
+
+'''def build_top5_panels(prev_summary, curr_summary, top_n=5):
+    prev_all = prev_summary.get("top_items", [])
+    curr_all = curr_summary.get("top_items", [])
+
+    prev_top = prev_all[:top_n]
+    curr_top = curr_all[:top_n]
+
+    # Full quantity lookup for current (so old items can still find their real qty)
+    curr_qty_lookup = {it["item_name"]: it.get("quantity", 0) for it in curr_all}
+
+    # Also useful for status (is an old item still in current top 5?)
+    curr_top_names = {it["item_name"] for it in curr_top}
+
+    old_top5_comparison = []
+    for i, it in enumerate(prev_top):
+        name = it["item_name"]
+        prev_qty = it.get("quantity", 0)
+        curr_qty = curr_qty_lookup.get(name, 0)
+
+        if prev_qty == 0:
+            pct = None
+        else:
+            pct = ((curr_qty - prev_qty) / prev_qty) * 100
+
+        status = "Still Top 5" if name in curr_top_names else "Dropped from Top 5"
+
+        old_top5_comparison.append({
+            "item_name": name,
+            "prev_rank": i + 1,
+            "prev_qty": prev_qty,
+            "curr_qty": curr_qty,
+            "pct_change": pct,
+            "status": status
+        })
+
+    new_top5 = []
+    for i, it in enumerate(curr_top):
+        new_top5.append({
+            "item_name": it["item_name"],
+            "curr_rank": i + 1,
+            "curr_qty": it.get("quantity", 0),
+        })
+
+    return {
+        "old_top5_comparison": old_top5_comparison,
+        "new_top5": new_top5
+    }'''
+
+def build_top5_panels(prev_summary, curr_summary, top_n=5):
+    prev_all = prev_summary.get("all_items", prev_summary.get("top_items", []))
+    curr_all = curr_summary.get("all_items", curr_summary.get("top_items", []))
+
+    prev_top = prev_all[:top_n]
+    curr_top = curr_all[:top_n]
+
+    # ✅ Quantity lookups from FULL lists
+    prev_qty_lookup = {it["item_name"]: it.get("quantity", it.get("total_sold", 0)) for it in prev_all}
+    curr_qty_lookup = {it["item_name"]: it.get("quantity", it.get("total_sold", 0)) for it in curr_all}
+
+    curr_top_names = {it["item_name"] for it in curr_top}
+
+    old_top5_comparison = []
+    for i, it in enumerate(prev_top):
+        name = it["item_name"]
+        prev_qty = prev_qty_lookup.get(name, 0)
+        curr_qty = curr_qty_lookup.get(name, 0)  # ✅ now should be real qty, not 0
+
+        pct = None if prev_qty == 0 else ((curr_qty - prev_qty) / prev_qty) * 100
+        status = "Still Top 5" if name in curr_top_names else f"Dropped from Top {top_n}"
+
+        old_top5_comparison.append({
+            "item_name": name,
+            "prev_rank": i + 1,
+            "prev_qty": prev_qty,
+            "curr_qty": curr_qty,
+            "pct_change": pct,
+            "status": status
+        })
+
+    new_top5 = []
+    for i, it in enumerate(curr_top):
+        new_top5.append({
+            "item_name": it["item_name"],
+            "curr_rank": i + 1,
+            "curr_qty": it.get("quantity", it.get("total_sold", 0)),
+        })
+
+    return {"old_top5_comparison": old_top5_comparison, "new_top5": new_top5}

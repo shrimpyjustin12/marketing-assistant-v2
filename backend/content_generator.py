@@ -5,9 +5,10 @@ Enhanced to support revenue-based insights from Toast POS data.
 """
 
 import json
-from typing import Dict, Any, Generator
+from typing import Dict, Any, Generator, Optional
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
+import time
 
 # System prompt for the marketing assistant
 SYSTEM_PROMPT = """You are the social media manager of the restaurant itself — not a marketer, not an AI.
@@ -74,6 +75,105 @@ You MUST respond with valid JSON in this exact format:
 }}
 """
 
+INSTAGRAM_PROMPT = """You are the restaurant's social media manager.
+
+You are generating ONLY Instagram content. Follow ALL rules below.
+
+GLOBAL RULES (apply to everything):
+- Sound like a real local restaurant owner/manager. Human, warm, not corporate.
+- Never mention "data", "analytics", "AI", "machine learning", or anything like that.
+- Never include revenue, net sales, or “generated $X”.
+- Never include "units sold" / "sales" / “quantity sold”.
+- If mentioning price, round it (NO decimals like $15.28).
+- Mention real menu items by name.
+- Must be noticeably DIFFERENT from previous_text if provided (avoid repeating phrases).
+
+INSTAGRAM RULES (must follow):
+- Tone: Polished, aesthetic, warm.
+- Length: 1–2 short paragraphs max with line breaks.
+- Emojis: 2–4.
+- Structure: Mood Hook → Community Milestone (no “units sold”) → Gentle CTA.
+- Hashtags: 8–12 targeted hashtags, rotating categories (Food type, Mood, Occasion, Location, Quality, Action).
+- Do NOT repeat the exact same hashtag combination from previous_text.
+
+CONTENT ISOLATION (critical):
+- Do NOT include TikTok ideas, TikTok concepts, video instructions, shot lists, POV lines, or “TikTok”.
+- Do NOT include promotion/recommendation lists, action plans, or “promotion ideas”.
+- No headings like "Instagram post:" or bullet lists.
+
+OUTPUT FORMAT (critical):
+Return ONLY raw JSON (no markdown, no extra keys, no extra text) in EXACTLY this shape:
+{{
+  "caption": "Your Instagram caption here\\n\\nSecond paragraph here",
+  "hashtags": ["#tag1", "#tag2", "..."]
+}}
+"""
+
+TIKTOK_PROMPT = """You are the restaurant's social media manager.
+
+You are generating ONLY TikTok content. Follow ALL rules below.
+
+GLOBAL RULES (apply to everything):
+- Sound like a real local restaurant owner/manager. Human, warm, not corporate.
+- Never mention "data", "analytics", "AI", "machine learning", or anything like that.
+- Never include revenue, net sales, or “generated $X”.
+- Never include "units sold" / "sales" / “quantity sold”.
+- If mentioning price, round it (NO decimals like $15.28).
+- Mention real menu items by name.
+- Must be noticeably DIFFERENT from previous_text if provided (avoid repeating phrases).
+
+TIKTOK RULES (must follow):
+- ONE sentence maximum (short, punchy).
+- Strong hook opener (POV, “You know it’s a good day when…”, etc.).
+- Tone: Casual, conversational.
+- Hashtags: 3–5, include viral-style tags like #foodtok / #fyp when appropriate.
+
+CONTENT ISOLATION (critical):
+- Do NOT write Instagram-style paragraphs.
+- Do NOT include promotion/recommendation lists, action plans, or “promotion ideas”.
+- No headings like "TikTok:".
+
+OUTPUT FORMAT (critical):
+Return ONLY raw JSON (no markdown, no extra keys, no extra text) in EXACTLY this shape:
+{{
+  "caption": "One-sentence hook",
+  "hashtags": ["#tag1", "#tag2", "..."]
+}}
+"""
+ACTIONS_PROMPT = """You are the restaurant's marketing planner.
+
+You are generating ONLY 3 recommended promotion actions. Follow ALL rules below.
+
+GLOBAL RULES (apply to everything):
+- Do NOT mention "data", "analytics", "AI", or model names.
+- Do NOT include revenue, net sales, or “generated $X”.
+- Do NOT include "units sold" / "sales" / “quantity sold”.
+- If mentioning price, round it (NO decimals like $15.28).
+- Must be noticeably DIFFERENT from previous_text if provided (avoid repeating phrases).
+- Keep actions realistic for a small local restaurant.
+
+ACTIONS RULES (must follow):
+- Output exactly 3 actions.
+- Each action should be specific and runnable (not vague).
+- Phrase as a short action line (not a paragraph).
+- No captions, no hashtags.
+
+CONTENT ISOLATION (critical):
+- Do NOT include Instagram captions.
+- Do NOT include TikTok hooks.
+- Do NOT include hashtags.
+- No headings like "Promotion ideas:".
+
+OUTPUT FORMAT (critical):
+Return ONLY raw JSON (no markdown, no extra keys, no extra text) in EXACTLY this shape:
+{{
+  "actions": [
+    "Action 1",
+    "Action 2",
+    "Action 3"
+  ]
+}}
+"""
 
 def build_user_prompt(summary: Dict[str, Any]) -> str:
     """Build the user prompt from the sales summary with revenue data support."""
@@ -280,3 +380,82 @@ def generate_content(
             raise ValueError(f"Model '{model}' not found. Please use a valid model name.")
         else:
             raise ValueError(f"Error: {error_msg}")
+        
+def parse_platform_json(text: str) -> Dict[str, Any]:
+    """Parse JSON that should contain only one platform section."""
+    try:
+        t = text.strip()
+
+        if "```json" in t:
+            start = t.find("```json") + 7
+            end = t.find("```", start)
+            t = t[start:end].strip()
+        elif "```" in t:
+            start = t.find("```") + 3
+            end = t.find("```", start)
+            t = t[start:end].strip()
+
+        return json.loads(t)
+    except Exception as e:
+        raise ValueError(f"Failed to parse platform response as JSON: {e}")
+
+def generate_platform_content(
+    platform: str,
+    summary: Dict[str, Any],
+    api_key: str,
+    model: str = "gpt-5-mini-2025-08-07",
+    previous_text: Optional[str] = None,
+    nonce: Optional[int] = None
+) -> Dict[str, Any]:
+    """
+    Generate ONLY the requested platform content.
+    platform: "instagram" | "tiktok" | "actions"
+    """
+    if not api_key or len(api_key) < 10:
+        raise ValueError("Invalid API key. Please enter a valid OpenAI API key.")
+
+    # pick the right system prompt
+    if platform == "instagram":
+        system_prompt = INSTAGRAM_PROMPT
+    elif platform == "tiktok":
+        system_prompt = TIKTOK_PROMPT
+    elif platform == "actions":
+        system_prompt = ACTIONS_PROMPT
+    else:
+        raise ValueError("platform must be one of: instagram, tiktok, actions")
+
+    n = nonce or int(time.time())
+
+    # Build the same user prompt you already use, but add variation controls
+    user_prompt = build_user_prompt(summary)
+    user_prompt += "\n\n"
+    user_prompt += f"nonce={n}\n"
+    if previous_text:
+        user_prompt += f"previous_text={previous_text}\n"
+        user_prompt += "Generate a NEW variation that avoids repeating phrases from previous_text.\n"
+
+    llm = ChatOpenAI(
+        model=model,
+        temperature=1,
+        api_key=api_key
+    )
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", system_prompt),
+        ("human", "{user_input}")
+    ])
+
+    chain = prompt | llm
+    response = chain.invoke({"user_input": user_prompt})
+
+    result = parse_platform_json(response.content)
+
+    # light validation per platform
+    if platform in ("instagram", "tiktok"):
+        if "caption" not in result or "hashtags" not in result or not isinstance(result["hashtags"], list):
+            raise ValueError(f"{platform} response must contain caption (string) and hashtags (list)")
+    if platform == "actions":
+        if "actions" not in result or not isinstance(result["actions"], list) or len(result["actions"]) < 3:
+            raise ValueError("actions response must contain actions: [..] with 3 items")
+    
+    return result

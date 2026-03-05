@@ -8,9 +8,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
+from typing import Literal  # add to imports
 
-from csv_processor import generate_summary
-from content_generator import generate_content, generate_content_stream
+from csv_processor import generate_summary, build_top5_panels
+from content_generator import generate_content, generate_content_stream, generate_platform_content
+
+previous_summary = None
 
 app = FastAPI(
     title="Marketing Dashboard API",
@@ -48,43 +51,79 @@ class Insight(BaseModel):
     text: str
 
 
-class SalesSummary(BaseModel):
-    top_items: List[TopItem]
-    top_categories: List[TopCategory]
-    insights: List[Insight]
-
-
 class ContentRequest(BaseModel):
     api_key: str
     model: Optional[str] = "gpt-5-mini-2025-08-07"
 
+class ComparisonRow(BaseModel):
+    item: str
+    previous: int
+    current: int
+    percent_change: float
+    prev_rank: Optional[int] = None
+    curr_rank: Optional[int] = None
+    rank_change: Optional[int] = None
+
+class SalesSummary(BaseModel):
+    top_items: List[TopItem]
+    top_categories: List[TopCategory]
+    insights: List[Insight]
+    comparison: Optional[List[ComparisonRow]] = None
 
 class SalesSummaryWithConfig(SalesSummary):
     api_key: str
     model: Optional[str] = "gpt-5-mini-2025-08-07"
 
 
+class SalesSummaryWithComparison(SalesSummary):
+    comparison: Optional[List[ComparisonRow]] = None
+
+class OldTopItemComparison(BaseModel):
+    item_name: str
+    prev_rank: int
+    prev_qty: int
+    curr_qty: int
+    pct_change: Optional[float] = None
+    status: str  # "Still Top 5" / "Dropped from Top 5"
+
+class NewTopItem(BaseModel):
+    item_name: str
+    curr_rank: int
+    curr_qty: int
+
+class Top5Panels(BaseModel):
+    old_top5_comparison: List[OldTopItemComparison]
+    new_top5: List[NewTopItem]
+
+class SalesSummaryWithPanels(SalesSummary):  # or whatever your base summary model is named
+    top5_panels: Optional[Top5Panels] = None
+    
 @app.get("/")
 async def root():
     return {"status": "online", "message": "Marketing Dashboard API is running"}
 
 
-@app.post("/upload-csv", response_model=SalesSummary)
+@app.post("/upload-csv", response_model=SalesSummaryWithPanels)
 async def upload_csv(file: UploadFile = File(...)):
-    """
-    Upload a CSV file and return a summary of the sales data.
-    """
-    if not file.filename.endswith('.csv'):
+    if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are supported")
-    
+
     try:
         content = await file.read()
-        csv_text = content.decode('utf-8')
-        
+        csv_text = content.decode("utf-8")
+
         summary_data = generate_summary(csv_text)
-        
+
+        global previous_summary
+
+        if previous_summary:
+            summary_data["top5_panels"] = build_top5_panels(
+                previous_summary, summary_data, top_n=5
+            )
+
+        previous_summary = summary_data
         return summary_data
-    
+
     except Exception as e:
         print(f"Error processing CSV: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing CSV: {str(e)}")
@@ -137,3 +176,39 @@ async def generate_marketing_content_stream(request: SalesSummaryWithConfig):
             yield f"data: {chunk}\n\n"
     
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+class PlatformRefreshRequest(SalesSummaryWithConfig):
+    platform: Literal["instagram", "tiktok", "actions"]
+    previous_text: Optional[str] = None
+    nonce: Optional[int] = None
+
+@app.post("/generate-platform")
+async def generate_platform(request: PlatformRefreshRequest):
+    """
+    Generate ONLY one platform section (instagram OR tiktok OR actions).
+    Used for per-card refresh/regenerate.
+    """
+    try:
+        summary_dict = {
+            "top_items": [item.model_dump() for item in request.top_items],
+            "top_categories": [cat.model_dump() for cat in request.top_categories],
+            "insights": [ins.model_dump() for ins in request.insights],
+        }
+
+        content = generate_platform_content(
+            platform=request.platform,
+            summary=summary_dict,
+            api_key=request.api_key,
+            model=request.model or "gpt-5-mini-2025-08-07",
+            previous_text=request.previous_text,
+            nonce=request.nonce
+        )
+
+        return {"platform": request.platform, "data": content}
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating platform content: {str(e)}")
+    
+

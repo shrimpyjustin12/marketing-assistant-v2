@@ -449,3 +449,71 @@
   color: #63ffd1;
   border: 1px solid #00ffa644;
 }
+
+/* === Brand Header Styling === */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-logo {
+  width: 100px;
+  height: 100px;
+  border-radius: 999px; /* keeps circular logo shape */
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.brand-subtitle {
+  margin: 4px 0 0;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.70);
+}
+
+/* Make header layout clean */
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.comparison-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 10px;
+}
+
+.comparison-grid-3 ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.comparison-col-title {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+  margin-bottom: 12px;
+}
+
+.comparison-card {
+  grid-column: 1 / -1;
+}
+

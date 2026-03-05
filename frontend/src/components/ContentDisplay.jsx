@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import CopyButton from './CopyButton'
 import './ContentDisplay.css'
 
-function ContentDisplay({ content }) {
+function ContentDisplay({ content, onRefresh, refreshing }) {
 
   if (!content) return null
 
@@ -85,8 +85,19 @@ function ContentDisplay({ content }) {
       {/* Instagram Section */}
       <div className="content-card instagram-card">
         <div className="card-header">
-          <h3>📸 Instagram</h3>
+          <h3>📸 Instasham</h3>
+
+          <div className="card-actions">
+            <button
+              className="refresh-btn"
+              onClick={() => onRefresh?.("instagram")}
+              disabled={refreshing?.instagram}
+              title="Generate a new Instagram caption + hashtags"
+    >
+      {refreshing?.instagram ? "Refreshing..." : "Refresh"}
+    </button>
           <CopyButton text={content.instagram?.caption + '\n\n' + content.instagram?.hashtags?.join(' ') || ''} />
+          </div>
         </div>
 
         <div className="card-content">
@@ -110,7 +121,18 @@ function ContentDisplay({ content }) {
       <div className="content-card tiktok-card">
         <div className="card-header">
           <h3>🎵 TikTok</h3>
+
+          <div className="card-actions">
+          <button
+            className="refresh-btn"
+            onClick={() => onRefresh?.("tiktok")}
+            disabled={refreshing?.tiktok}
+            title="Generate a new TikTok caption + hashtags"
+          >
+      {refreshing?.tiktok ? "Refreshing..." : "Refresh"}
+    </button>
           <CopyButton text={content.tiktok?.caption + '\n\n' + content.tiktok?.hashtags?.join(' ') || ''} />
+          </div>
         </div>
 
         <div className="card-content">
@@ -134,7 +156,18 @@ function ContentDisplay({ content }) {
       <div className="content-card ideas-card">
         <div className="card-header">
           <h3>⚡ Top 3 Recommended Actions</h3>
+
+          <div className="card-actions">
+          <button
+              className="refresh-btn"
+              onClick={() => onRefresh?.("actions")}
+              disabled={refreshing?.actions}
+              title="Generate 3 new recommended actions"
+          >
+      {refreshing?.actions ? "Refreshing..." : "Refresh"}
+    </button>
           <CopyButton text={content.promotion_ideas?.map(i => i.text).join('\n\n') || ''} />
+        </div>
         </div>
 
         <div className="card-content">
