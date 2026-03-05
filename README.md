@@ -60,9 +60,10 @@ This starts both the backend (port 8000) and frontend (port 5173).
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate.bat
 pip install -r requirements.txt
 uvicorn main:app --reload
+#python -m uvicorn main:app --reload --port 8000
 ```
 
 ### Frontend

@@ -85,7 +85,7 @@ function ContentDisplay({ content, onRefresh, refreshing }) {
       {/* Instagram Section */}
       <div className="content-card instagram-card">
         <div className="card-header">
-          <h3>📸 Instasham</h3>
+          <h3>📸 Instagram</h3>
 
           <div className="card-actions">
             <button
