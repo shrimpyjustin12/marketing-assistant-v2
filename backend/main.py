@@ -73,6 +73,7 @@ class SalesSummary(BaseModel):
 class SalesSummaryWithConfig(SalesSummary):
     api_key: str
     model: Optional[str] = "gpt-5-mini-2025-08-07"
+    selected_item: Optional[str] = None
 
 
 class SalesSummaryWithComparison(SalesSummary):
@@ -140,6 +141,7 @@ async def generate_marketing_content(request: SalesSummaryWithConfig):
             "top_items": [item.model_dump() for item in request.top_items],
             "top_categories": [cat.model_dump() for cat in request.top_categories],
             "insights": [ins.model_dump() for ins in request.insights],
+            "selected_item": request.selected_item,
         }
         
         content = generate_content(
@@ -165,6 +167,7 @@ async def generate_marketing_content_stream(request: SalesSummaryWithConfig):
         "top_items": [item.model_dump() for item in request.top_items],
         "top_categories": [cat.model_dump() for cat in request.top_categories],
         "insights": [ins.model_dump() for ins in request.insights],
+        "selected_item": request.selected_item,
     }
     
     async def event_generator():
@@ -193,6 +196,7 @@ async def generate_platform(request: PlatformRefreshRequest):
             "top_items": [item.model_dump() for item in request.top_items],
             "top_categories": [cat.model_dump() for cat in request.top_categories],
             "insights": [ins.model_dump() for ins in request.insights],
+            "selected_item": request.selected_item,
         }
 
         content = generate_platform_content(

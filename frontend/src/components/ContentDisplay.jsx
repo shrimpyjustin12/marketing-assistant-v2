@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import CopyButton from './CopyButton'
 import './ContentDisplay.css'
 
-function ContentDisplay({ content, onRefresh, refreshing }) {
+function ContentDisplay({ content, onRefresh, refreshing, selectedItem }) {
 
   if (!content) return null
 
@@ -83,6 +83,11 @@ function ContentDisplay({ content, onRefresh, refreshing }) {
     <div className="content-grid">
 
       {/* Instagram Section */}
+      {selectedItem && (
+  <div className="content-focus-banner">
+    Content is currently focused on: <strong>{selectedItem}</strong>
+  </div>
+)}
       <div className="content-card instagram-card">
         <div className="card-header">
           <h3>📸 Instagram</h3>

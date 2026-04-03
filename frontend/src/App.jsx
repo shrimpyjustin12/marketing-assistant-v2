@@ -3,6 +3,7 @@ import CsvUpload from './components/CsvUpload'
 import ContentDisplay from './components/ContentDisplay'
 import Settings from './components/Settings'
 import './App.css'
+import React from 'react'
 
 // Use /api for production (Vercel), localhost for development
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
@@ -30,7 +31,8 @@ function App() {
   instagram: false,
   tiktok: false,
   actions: false,
-});
+})
+  const [selectedItem, setSelectedItem] = useState('');
 
   // 2. Load the key from the browser storage as soon as the app opens
   useEffect(() => {
@@ -82,6 +84,7 @@ function App() {
       const data = JSON.parse(text)
       console.log("Summary data from backend:", data)
       setSummary(data)
+      setSelectedItem(data?.top_items?.[0]?.item_name || '')
       setLoadingStatus('')
     } catch (err) {
       setError(err.message || 'An error occurred while uploading')
@@ -113,6 +116,7 @@ function App() {
           ...summary,
           api_key: settings.apiKey,
           model: settings.model,
+          selected_item: selectedItem,
         }),
       })
 
@@ -165,6 +169,28 @@ function App() {
       setLoadingStatus('')
     }
   }
+
+  const getStatusClass = (status) => {
+  if (!status) return "status-neutral";
+
+  const s = status.toLowerCase();
+
+  if (s.includes("still")) return "status-good";
+  if (s.includes("dropped")) return "status-bad";
+  if (s.includes("entered") || s.includes("new")) return "status-info";
+
+  return "status-neutral";
+};
+
+const getPercentClass = (percent) => {
+  const num = Number(percent);
+
+  if (num > 0) return "percent-good";
+  if (num < 0) return "percent-bad";
+
+  return "percent-neutral";
+};
+
   const handleRefresh = async (platform) => {
   if (!summary) return;
 
@@ -196,6 +222,7 @@ function App() {
         platform,                 // "instagram" | "tiktok" | "actions"
         previous_text: previousText,
         nonce: Date.now(),
+        selected_item: selectedItem,
       }),
     });
 
@@ -346,71 +373,95 @@ function App() {
                 </ul>
               </div>
                                             <div className="summary-card comparison-card">
-                                            <h3>Change vs Previous CSV</h3>
+                                              <h3>Change vs Previous CSV</h3>
 
-                                            {!summary?.top5_panels ? (
-                                              <div style={{ opacity: 0.7 }}>
-                                                Upload a second CSV to see comparison.
-                                              </div>
-                                            ) : (
-                                              <div className="comparison-grid-3">
-                                                {/* Column 1 */}
-                                                <div>
-                                                  <div className="comparison-col-title">PREVIOUS TOP 5</div>
-                                                  <ul>
-                                                    {summary.top5_panels.old_top5_comparison.map((row, idx) => (
-                                                      <li key={idx} className="item-row">
-                                                        <span className="item-name">{row.item_name}</span>
-                                                        <div className="item-stats">
-                                                          <span className="comparison-ranks">#{row.prev_rank}</span>
-                                                          <span className="comparison-counts">{row.prev_qty} units</span>
-                                                        </div>
-                                                      </li>
-                                                    ))}
-                                                  </ul>
+                                              {!summary?.top5_panels ? (
+                                                <div className="comparison-empty-state">
+                                                  Upload a second CSV to see comparison.
                                                 </div>
+                                              ) : (
+                                                <div className="comparison-grid-3">
+                                                  {/* Column 1 */}
+                                                  <div>
+                                                    <div className="comparison-col-title">PREVIOUS TOP 5</div>
+                                                    <ul>
+                                                      {summary.top5_panels.old_top5_comparison.map((row, idx) => (
+                                                        <li key={idx} className="item-row comparison-panel-row">
+                                                          <span className="item-name">{row.item_name}</span>
+                                                          <div className="item-stats">
+                                                            <span className="comparison-ranks">#{row.prev_rank}</span>
+                                                            <span className="comparison-counts">{row.prev_qty} units</span>
+                                                          </div>
+                                                        </li>
+                                                      ))}
+                                                    </ul>
+                                                  </div>
 
-                                                {/* Column 2 */}
-                                                <div>
-                                                  <div className="comparison-col-title">OLD TOP 5 → CURRENT</div>
-                                                  <ul>
-                                                    {summary.top5_panels.old_top5_comparison.map((row, idx) => (
-                                                      <li key={idx} className="item-row">
-                                                        <span className="item-name">{row.item_name}</span>
-                                                        <div className="item-stats">
-                                                          <span className="comparison-counts">
-                                                            {row.prev_qty} → {row.curr_qty}
-                                                          </span>
-                                                          <span className={`change ${row.pct_change >= 0 ? "pos" : "neg"}`}>
-                                                            {row.pct_change === null || row.pct_change === undefined
-                                                              ? "—"
-                                                              : `${row.pct_change > 0 ? "+" : ""}${row.pct_change.toFixed(1)}%`}
-                                                          </span>
-                                                          <span style={{ fontSize: 12, opacity: 0.7 }}>{row.status}</span>
-                                                        </div>
-                                                      </li>
-                                                    ))}
-                                                  </ul>
-                                                </div>
+                                                  {/* Column 2 */}
+                                                  <div>
+                                                    <div className="comparison-col-title">OLD TOP 5 → CURRENT</div>
+                                                    <ul>
+                                                      {summary.top5_panels.old_top5_comparison.map((row, idx) => {
+                                                        const statusText = row.status || "";
+                                                        const lowerStatus = statusText.toLowerCase();
 
-                                                {/* Column 3 */}
-                                                <div>
-                                                  <div className="comparison-col-title">CURRENT TOP 5</div>
-                                                  <ul>
-                                                    {summary.top5_panels.new_top5.map((row, idx) => (
-                                                      <li key={idx} className="item-row">
-                                                        <span className="item-name">{row.item_name}</span>
-                                                        <div className="item-stats">
-                                                          <span className="comparison-ranks">#{row.curr_rank}</span>
-                                                          <span className="comparison-counts">{row.curr_qty} units</span>
-                                                        </div>
-                                                      </li>
-                                                    ))}
-                                                  </ul>
+                                                        let statusClass = "status-neutral";
+                                                        if (lowerStatus.includes("still")) statusClass = "status-good";
+                                                        else if (lowerStatus.includes("dropped")) statusClass = "status-bad";
+                                                        else if (lowerStatus.includes("entered") || lowerStatus.includes("new")) statusClass = "status-info";
+
+                                                        let rowClass = "comparison-panel-row";
+                                                        if (lowerStatus.includes("still")) rowClass += " row-still";
+                                                        else if (lowerStatus.includes("dropped")) rowClass += " row-dropped";
+                                                        else if (lowerStatus.includes("entered") || lowerStatus.includes("new")) rowClass += " row-entered";
+
+                                                        return (
+                                                          <li key={idx} className={`item-row ${rowClass}`}>
+                                                            <span className="item-name">{row.item_name}</span>
+
+                                                            <div className="item-stats comparison-middle-stats">
+                                                              <span className="comparison-counts comparison-shift">
+                                                                <span className="old-units">{row.prev_qty}</span>
+                                                                <span className="comparison-arrow">→</span>
+                                                                <span className="new-units">{row.curr_qty}</span>
+                                                              </span>
+
+                                                              <span className={`change comparison-percent ${
+                                                                row.pct_change > 0 ? "pos" : row.pct_change < 0 ? "neg" : "neutral"
+                                                              }`}>
+                                                                {row.pct_change === null || row.pct_change === undefined
+                                                                  ? "—"
+                                                                  : `${row.pct_change > 0 ? "+" : ""}${row.pct_change.toFixed(1)}%`}
+                                                              </span>
+
+                                                              <span className={`comparison-status-badge ${statusClass}`}>
+                                                                {row.status}
+                                                              </span>
+                                                            </div>
+                                                          </li>
+                                                        );
+                                                      })}
+                                                    </ul>
+                                                  </div>
+
+                                                  {/* Column 3 */}
+                                                  <div>
+                                                    <div className="comparison-col-title">CURRENT TOP 5</div>
+                                                    <ul>
+                                                      {summary.top5_panels.new_top5.map((row, idx) => (
+                                                        <li key={idx} className="item-row comparison-panel-row">
+                                                          <span className="item-name">{row.item_name}</span>
+                                                          <div className="item-stats">
+                                                            <span className="comparison-ranks">#{row.curr_rank}</span>
+                                                            <span className="comparison-counts">{row.curr_qty} units</span>
+                                                          </div>
+                                                        </li>
+                                                      ))}
+                                                    </ul>
+                                                  </div>
                                                 </div>
-                                              </div>
-                                            )}
-                                          </div>
+                                              )}
+                                            </div>
 
             </div>
 
@@ -430,7 +481,34 @@ function App() {
                 'Generate Marketing Content'
               )}
             </button>
+          
+          <div className="summary-card focus-card">
+  <h3>Content Focus</h3>
+  <label htmlFor="top-item-select" className="focus-label">
+    Choose which top item the content should focus on:
+  </label>
+
+  <select
+    id="top-item-select"
+    className="focus-select"
+    value={selectedItem}
+    onChange={(e) => setSelectedItem(e.target.value)}
+  >
+    {summary.top_items?.map((item, idx) => (
+      <option key={idx} value={item.item_name}>
+        {item.item_name}
+      </option>
+    ))}
+  </select>
+
+  {selectedItem && (
+    <p className="focus-hint">
+      Generated content will focus on <strong>{selectedItem}</strong>.
+    </p>
+  )}
+</div>
           </section>
+          
         )}
 
         {loading && loadingStatus && !content && summary && (
@@ -457,6 +535,7 @@ function App() {
             content={content}
             onRefresh={handleRefresh}
             refreshing={refreshing}
+            selectedItem={selectedItem}
             />
           </section>
         )}
@@ -470,3 +549,4 @@ function App() {
 }
 
 export default App
+

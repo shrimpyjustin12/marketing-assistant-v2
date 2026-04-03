@@ -35,7 +35,7 @@ PLATFORM GUIDELINES:
 - NEVER list revenue (e.g., NO "Generated $4,500").
 - NEVER mention "units sold" or "sales."
 - INSTEAD, turn numbers into "Community Milestones":
-  * "Over 300 bowls served this month! 🔥"
+  * "Hundreds of you chose this favorite this month."
   * "301 of you chose our Pho Beef since we started this month's count."
   * "Our neighborhood favorite just hit a new record: 300+ bowls served."
 - **THE VIBE CHECK:** If the caption sounds like a business report, it is WRONG. It should sound like a proud owner sharing a success.
@@ -43,8 +43,8 @@ PLATFORM GUIDELINES:
 📌 CAPTION VARIATION & ROTATION:
 - Rotate between these 4 angles so they never repeat:
   1. THE WEATHER: "Perfect for this [rainy/cold/sunny] day."
-  2. THE GRATITUDE: "Huge thanks to the 300+ people who swung by for Pho this week."
-  3. THE CRAVING: "POV: You finally get that first sip of broth."
+  2. THE GRATITUDE: "Huge thanks to everyone who stopped by for this favorite this week."
+  3. THE CRAVING: "POV: You finally get that first bite you've been craving."
   4. THE LOCAL SPOT: "Keeping [City/Neighborhood] fed and happy."
 
 📌 HASHTAG VARIATION RULES:
@@ -175,50 +175,6 @@ Return ONLY raw JSON (no markdown, no extra keys, no extra text) in EXACTLY this
 }}
 """
 
-def build_user_prompt(summary: Dict[str, Any]) -> str:
-    """Build the user prompt from the sales summary with revenue data support."""
-    lines = ["Here is a summary of recent sales data:", ""]
-
-    # Top-selling items with revenue info
-    if summary.get("top_items"):
-        lines.append("Top-selling items:")
-        for item in summary["top_items"]:
-            if item.get('net_sales'):
-                lines.append(f"- {item['item_name']}: {item['quantity']} units sold, ${item['net_sales']:,.2f} revenue, ${item['avg_price']:.2f} avg price")
-            else:
-                lines.append(f"- {item['item_name']}: {item['quantity']} units sold")
-        lines.append("")
-
-    # Top categories with revenue info
-    if summary.get("top_categories"):
-        lines.append("Top categories:")
-        for cat in summary["top_categories"]:
-            if cat.get('net_sales'):
-                lines.append(f"- {cat['category']}: {cat['quantity']} units, ${cat['net_sales']:,.2f} revenue")
-            else:
-                lines.append(f"- {cat['category']}: {cat['quantity']} units")
-        lines.append("")
-
-    # Business insights
-    if summary.get("insights"):
-        lines.append("Key business insights:")
-        for insight in summary["insights"]:
-            lines.append(f"- {insight['text']}")
-        lines.append("")
-
-    # Legacy monthly trends support
-    if summary.get("monthly_trends"):
-        lines.append("Observed trends:")
-        for trend in summary["monthly_trends"]:
-            lines.append(f"- {trend['trend'].capitalize()} in {trend['month']}.")
-        lines.append("")
-
-    lines.append("Based on this data, generate Instagram content, TikTok content, and promotion ideas following the platform guidelines.")
-    lines.append("Remember: Instagram needs 8-12 hashtags, TikTok needs 3-5 hashtags.")
-
-    return "\n".join(lines)
-
-
 def parse_llm_response(response_text: str) -> Dict[str, Any]:
     """Parse and validate the LLM response."""
     try:
@@ -235,50 +191,139 @@ def parse_llm_response(response_text: str) -> Dict[str, Any]:
 
         result = json.loads(text)
 
-        # Check for new format (instagram + tiktok)
+        # If the whole response is double-encoded JSON, decode again
+        if isinstance(result, str):
+            result = json.loads(result)
+
+        # If the assistant accidentally put the whole object inside instagram.caption,
+        # try to recover from it.
+        if (
+            isinstance(result, dict)
+            and "instagram" in result
+            and isinstance(result["instagram"], dict)
+            and isinstance(result["instagram"].get("caption"), str)
+        ):
+            caption_text = result["instagram"]["caption"].strip()
+            if caption_text.startswith("{") and '"instagram"' in caption_text and '"tiktok"' in caption_text:
+                nested = json.loads(caption_text)
+                if isinstance(nested, dict) and "instagram" in nested and "tiktok" in nested:
+                    result = nested
+
+        # Validate final structure
         if "instagram" in result and "tiktok" in result and "promotion_ideas" in result:
-            # Validate Instagram structure
+            if not isinstance(result["instagram"], dict):
+                raise ValueError("Instagram must be an object")
+            if not isinstance(result["tiktok"], dict):
+                raise ValueError("TikTok must be an object")
+
             if "caption" not in result["instagram"] or "hashtags" not in result["instagram"]:
                 raise ValueError("Instagram must have caption and hashtags")
+            if not isinstance(result["instagram"]["caption"], str):
+                raise ValueError("Instagram caption must be a string")
             if not isinstance(result["instagram"]["hashtags"], list):
                 raise ValueError("Instagram hashtags must be a list")
-                
-            # Validate TikTok structure
+
             if "caption" not in result["tiktok"] or "hashtags" not in result["tiktok"]:
                 raise ValueError("TikTok must have caption and hashtags")
+            if not isinstance(result["tiktok"]["caption"], str):
+                raise ValueError("TikTok caption must be a string")
             if not isinstance(result["tiktok"]["hashtags"], list):
                 raise ValueError("TikTok hashtags must be a list")
-                
-            # Validate promotion ideas
+
+            # Reject captions that still look like raw JSON
+            for platform in ("instagram", "tiktok"):
+                caption = result[platform]["caption"].strip()
+                if caption.startswith("{") and ('"instagram"' in caption or '"tiktok"' in caption):
+                    raise ValueError(f"{platform} caption contains embedded JSON instead of plain caption text")
+
             for idea in result["promotion_ideas"]:
                 if not isinstance(idea, dict):
                     raise ValueError("promotion ideas must contain objects")
                 if "text" not in idea or "reason" not in idea:
                     raise ValueError("Each promotion idea must have text and reason")
-            
+
             return result
-            
-        # Check for old format (captions + hashtags)
+
         elif "captions" in result and "hashtags" in result and "promotion_ideas" in result:
-            print("Warning: Received old format, converting to new format...")
-            # Convert old format to new format
             converted = {
                 "instagram": {
                     "caption": result["captions"][0] if result["captions"] else "Check out our delicious food!",
-                    "hashtags": result["hashtags"][:8]  # Take first 8 hashtags
+                    "hashtags": result["hashtags"][:8]
                 },
                 "tiktok": {
-                    "caption": result["captions"][1] if len(result["captions"]) > 1 else (result["captions"][0] if result["captions"] else "This food is amazing!"),
-                    "hashtags": result["hashtags"][:3]  # Take first 3 hashtags
+                    "caption": result["captions"][1] if len(result["captions"]) > 1 else (
+                        result["captions"][0] if result["captions"] else "This food is amazing!"
+                    ),
+                    "hashtags": result["hashtags"][:3]
                 },
                 "promotion_ideas": result["promotion_ideas"]
             }
             return converted
+
         else:
-            raise ValueError("Response missing required keys. Expected either 'instagram'/'tiktok' format or 'captions' format")
+            raise ValueError("Response missing required keys. Expected either new or old format")
 
     except json.JSONDecodeError as e:
         raise ValueError(f"Failed to parse LLM response as JSON: {e}")
+    
+def build_user_prompt(summary: Dict[str, Any]) -> str:
+    lines = ["Here is a summary of recent sales data:", ""]
+
+    selected_item_name = summary.get("selected_item")
+    selected_item = None
+
+    if selected_item_name and summary.get("top_items"):
+        selected_item = next(
+            (item for item in summary["top_items"] if item["item_name"] == selected_item_name),
+            None
+        )
+
+    if selected_item:
+        lines.append("IMPORTANT FOCUS ITEM:")
+        lines.append(
+            f"- The ONLY main item for this content is {selected_item['item_name']}."
+        )
+        lines.append(
+            "Instagram caption, TikTok hook, hashtags, and promotion actions must all center on this item."
+        )
+        lines.append(
+            "You may mention the restaurant generally, but do not make Pho Beef or any other item the star unless it is the selected item."
+        )
+        lines.append("")
+
+    if summary.get("top_items"):
+        lines.append("Top-selling items:")
+        for item in summary["top_items"]:
+            if item.get("net_sales"):
+                lines.append(
+                    f"- {item['item_name']}: {item['quantity']} units sold, "
+                    f"${item['net_sales']:,.2f} revenue, ${item['avg_price']:.2f} avg price"
+                )
+            else:
+                lines.append(f"- {item['item_name']}: {item['quantity']} units sold")
+        lines.append("")
+
+    if summary.get("top_categories"):
+        lines.append("Top categories:")
+        for cat in summary["top_categories"]:
+            if cat.get("net_sales"):
+                lines.append(
+                    f"- {cat['category']}: {cat['quantity']} units, ${cat['net_sales']:,.2f} revenue"
+                )
+            else:
+                lines.append(f"- {cat['category']}: {cat['quantity']} units")
+        lines.append("")
+
+    if summary.get("insights"):
+        lines.append("Key business insights:")
+        for insight in summary["insights"]:
+            lines.append(f"- {insight['text']}")
+        lines.append("")
+
+    lines.append("Based on this data, generate Instagram content, TikTok content, and promotion ideas following the platform guidelines.")
+    lines.append("Remember: Instagram needs 8-12 hashtags, TikTok needs 3-5 hashtags.")
+
+    return "\n".join(lines)
 
 
 def generate_content_stream(
