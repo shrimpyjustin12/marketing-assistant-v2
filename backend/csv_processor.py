@@ -32,13 +32,14 @@ def parse_csv(csv_content: str) -> pd.DataFrame:
     column_mapping = {
     'sales category': 'category',
     'item name': 'item_name', 
-    'item qty': 'quantity',           
+    'item qty': 'quantity',           # New CSV uses 'item qty'
+    'qty sold': 'quantity',           # Alternative name
     'quantity': 'quantity',
     'avg price': 'avg_price',
+    'avg. price': 'avg_price',        # New CSV has 'avg. price' with a dot
     'gross sales': 'gross_sales',
     'discount amount': 'discount_amount',
     'net sales': 'net_sales',
-    # Legacy format
     'quantity_sold': 'quantity',
     'date': 'date'
 }
