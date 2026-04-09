@@ -30,19 +30,20 @@ def parse_csv(csv_content: str) -> pd.DataFrame:
     # Handle Toast format column names (may have spaces and different naming)
     # Create a lowercase mapping for case-insensitive matching
     column_mapping = {
-        'sales category': 'category',
-        'item name': 'item_name', 
-        'item qty': 'quantity',           # New CSV uses 'item qty'
-        'qty sold': 'quantity',           # Alternative name
-        'quantity': 'quantity',
-        'avg price': 'avg_price',
-        'avg. price': 'avg_price',        # New CSV has 'avg. price' with a dot
-        'gross sales': 'gross_sales',
-        'discount amount': 'discount_amount',
-        'net sales': 'net_sales',
-        'quantity_sold': 'quantity',
-        'date': 'date'
-    }
+    'sales category': 'category',
+    'item name': 'item_name',
+    'item, open item': 'item_name',   # ← ADD THIS (handles the comma in the name)
+    'item qty': 'quantity',
+    'qty sold': 'quantity',
+    'quantity': 'quantity',
+    'avg price': 'avg_price',
+    'avg. price': 'avg_price',
+    'gross sales': 'gross_sales',
+    'discount amount': 'discount_amount',
+    'net sales': 'net_sales',
+    'quantity_sold': 'quantity',
+    'date': 'date'
+}
     
     # Rename columns using case-insensitive matching
     new_columns = {}
