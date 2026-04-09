@@ -3,7 +3,7 @@ CSV Processing Module
 Parses Toast Menu Breakdown CSV data and generates trend summaries for AI content generation.
 Supports Toast POS export format with revenue data.
 """
-# UPDATED: Fixed performacne tags function - March 2026
+# UPDATED: Fixed performance tags function - March 2026
 
 import pandas as pd
 from io import StringIO
@@ -30,19 +30,19 @@ def parse_csv(csv_content: str) -> pd.DataFrame:
     # Handle Toast format column names (may have spaces and different naming)
     # Create a lowercase mapping for case-insensitive matching
     column_mapping = {
-    'sales category': 'category',
-    'item name': 'item_name', 
-    'item qty': 'quantity',           # New CSV uses 'item qty'
-    'qty sold': 'quantity',           # Alternative name
-    'quantity': 'quantity',
-    'avg price': 'avg_price',
-    'avg. price': 'avg_price',        # New CSV has 'avg. price' with a dot
-    'gross sales': 'gross_sales',
-    'discount amount': 'discount_amount',
-    'net sales': 'net_sales',
-    'quantity_sold': 'quantity',
-    'date': 'date'
-}
+        'sales category': 'category',
+        'item name': 'item_name', 
+        'item qty': 'quantity',           # New CSV uses 'item qty'
+        'qty sold': 'quantity',           # Alternative name
+        'quantity': 'quantity',
+        'avg price': 'avg_price',
+        'avg. price': 'avg_price',        # New CSV has 'avg. price' with a dot
+        'gross sales': 'gross_sales',
+        'discount amount': 'discount_amount',
+        'net sales': 'net_sales',
+        'quantity_sold': 'quantity',
+        'date': 'date'
+    }
     
     # Rename columns using case-insensitive matching
     new_columns = {}
@@ -57,6 +57,11 @@ def parse_csv(csv_content: str) -> pd.DataFrame:
     # Check if this is Toast format (has item_name and category)
     if 'item_name' in df.columns and 'category' in df.columns:
         print(f"Detected Toast format. Total rows: {len(df)}")
+        
+        # 🔥 NEW: Filter out rows that are not actual menu items (summary rows)
+        if 'Type' in df.columns:
+            df = df[df['Type'] == 'menuItem']
+            print(f"Rows after filtering by Type='menuItem': {len(df)}")
         
         # Filter out rows where item_name is empty, NaN, or whitespace
         # First, fill NaN with empty string, then strip whitespace
@@ -139,7 +144,7 @@ def add_performance_tags(top_items: List[Dict[str, Any]]) -> List[Dict[str, Any]
     tagged_items = []
     for item in top_items:
         item_with_tag = item.copy()
-        tag = None # Default to no tag
+        tag = None  # Default to no tag
         
         qty = item['quantity']
         rev = item.get('net_sales', 0)
@@ -383,76 +388,6 @@ def generate_summary(csv_content: str) -> Dict[str, Any]:
 
     return summary
 
-'''def compare_summaries(prev, curr):
-    comparison = []
-
-    prev_items = {i["item_name"]: i for i in prev["top_items"]}
-    curr_items = {i["item_name"]: i for i in curr["top_items"]}
-
-    for name, curr_item in curr_items.items():
-        if name in prev_items:
-            prev_qty = prev_items[name]["quantity"]
-            curr_qty = curr_item["quantity"]
-
-            if prev_qty > 0:
-                change = ((curr_qty - prev_qty) / prev_qty) * 100
-
-                comparison.append({
-                    "item": name,
-                    "previous": prev_qty,
-                    "current": curr_qty,
-                    "percent_change": round(change, 1)
-                })
-
-    return comparison'''
-
-'''def build_top5_panels(prev_summary, curr_summary, top_n=5):
-    prev_all = prev_summary.get("top_items", [])
-    curr_all = curr_summary.get("top_items", [])
-
-    prev_top = prev_all[:top_n]
-    curr_top = curr_all[:top_n]
-
-    # Full quantity lookup for current (so old items can still find their real qty)
-    curr_qty_lookup = {it["item_name"]: it.get("quantity", 0) for it in curr_all}
-
-    # Also useful for status (is an old item still in current top 5?)
-    curr_top_names = {it["item_name"] for it in curr_top}
-
-    old_top5_comparison = []
-    for i, it in enumerate(prev_top):
-        name = it["item_name"]
-        prev_qty = it.get("quantity", 0)
-        curr_qty = curr_qty_lookup.get(name, 0)
-
-        if prev_qty == 0:
-            pct = None
-        else:
-            pct = ((curr_qty - prev_qty) / prev_qty) * 100
-
-        status = "Still Top 5" if name in curr_top_names else "Dropped from Top 5"
-
-        old_top5_comparison.append({
-            "item_name": name,
-            "prev_rank": i + 1,
-            "prev_qty": prev_qty,
-            "curr_qty": curr_qty,
-            "pct_change": pct,
-            "status": status
-        })
-
-    new_top5 = []
-    for i, it in enumerate(curr_top):
-        new_top5.append({
-            "item_name": it["item_name"],
-            "curr_rank": i + 1,
-            "curr_qty": it.get("quantity", 0),
-        })
-
-    return {
-        "old_top5_comparison": old_top5_comparison,
-        "new_top5": new_top5
-    }'''
 
 def build_top5_panels(prev_summary, curr_summary, top_n=5):
     prev_all = prev_summary.get("all_items", prev_summary.get("top_items", []))
