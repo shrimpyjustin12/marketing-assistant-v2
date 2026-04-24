@@ -733,19 +733,3 @@
   font-size: 0.9rem;
 }
 
-/* Custom input for content focus */
-.focus-input {
-  width: 100%;
-  padding: 8px 12px;
-  margin-top: 10px;
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-size: 0.9rem;
-}
-
-.focus-input:focus {
-  outline: none;
-  border-color: var(--accent-primary);
-}
