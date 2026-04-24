@@ -28,10 +28,10 @@ function App() {
   const [error, setError] = useState(null)
   const [settings, setSettings] = useState({ apiKey: '', model: 'gpt-5-mini-2025-08-07' })
   const [refreshing, setRefreshing] = useState({
-  instagram: false,
-  tiktok: false,
-  actions: false,
-})
+    instagram: false,
+    tiktok: false,
+    actions: false,
+  })
   const [selectedItem, setSelectedItem] = useState('');
 
   // 2. Load the key from the browser storage as soon as the app opens
@@ -171,96 +171,91 @@ function App() {
   }
 
   const getStatusClass = (status) => {
-  if (!status) return "status-neutral";
+    if (!status) return "status-neutral";
+    const s = status.toLowerCase();
+    if (s.includes("still")) return "status-good";
+    if (s.includes("dropped")) return "status-bad";
+    if (s.includes("entered") || s.includes("new")) return "status-info";
+    return "status-neutral";
+  };
 
-  const s = status.toLowerCase();
-
-  if (s.includes("still")) return "status-good";
-  if (s.includes("dropped")) return "status-bad";
-  if (s.includes("entered") || s.includes("new")) return "status-info";
-
-  return "status-neutral";
-};
-
-const getPercentClass = (percent) => {
-  const num = Number(percent);
-
-  if (num > 0) return "percent-good";
-  if (num < 0) return "percent-bad";
-
-  return "percent-neutral";
-};
+  const getPercentClass = (percent) => {
+    const num = Number(percent);
+    if (num > 0) return "percent-good";
+    if (num < 0) return "percent-bad";
+    return "percent-neutral";
+  };
 
   const handleRefresh = async (platform) => {
-  if (!summary) return;
+    if (!summary) return;
 
-  if (!settings.apiKey) {
-    setError('Please configure your OpenAI API key in settings first.');
-    return;
-  }
-
-  setError(null);
-  setRefreshing((prev) => ({ ...prev, [platform]: true }));
-
-  try {
-    // Use previous text to force novelty
-    let previousText = null;
-    if (platform === "instagram") previousText = content?.instagram?.caption || null;
-    if (platform === "tiktok") previousText = content?.tiktok?.caption || null;
-    if (platform === "actions") {
-      // promotion_ideas currently stores objects with {text, reason}
-      previousText = content?.promotion_ideas?.map(i => i.text).join(" | ") || null;
+    if (!settings.apiKey) {
+      setError('Please configure your OpenAI API key in settings first.');
+      return;
     }
 
-    const response = await fetch(`${API_BASE}/generate-platform`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...summary,
-        api_key: settings.apiKey,
-        model: settings.model,
-        platform,                 // "instagram" | "tiktok" | "actions"
-        previous_text: previousText,
-        nonce: Date.now(),
-        selected_item: selectedItem,
-      }),
-    });
+    setError(null);
+    setRefreshing((prev) => ({ ...prev, [platform]: true }));
 
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.detail || 'Failed to refresh content');
-    }
-
-    const data = await response.json();
-
-    // data = { platform: "...", data: {...} }
-    setContent((prev) => {
-      if (!prev) return prev;
-
-      if (platform === "instagram") {
-        return { ...prev, instagram: data.data };
-      }
-      if (platform === "tiktok") {
-        return { ...prev, tiktok: data.data };
-      }
+    try {
+      // Use previous text to force novelty
+      let previousText = null;
+      if (platform === "instagram") previousText = content?.instagram?.caption || null;
+      if (platform === "tiktok") previousText = content?.tiktok?.caption || null;
       if (platform === "actions") {
-        // Convert actions list back into promotion_ideas objects so UI stays compatible
-        const actions = data.data.actions || [];
-        return {
-          ...prev,
-          promotion_ideas: actions.map((text) => ({ text, reason: "Refreshed suggestion" })),
-        };
+        // promotion_ideas currently stores objects with {text, reason}
+        previousText = content?.promotion_ideas?.map(i => i.text).join(" | ") || null;
       }
 
-      return prev;
-    });
+      const response = await fetch(`${API_BASE}/generate-platform`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...summary,
+          api_key: settings.apiKey,
+          model: settings.model,
+          platform,                 // "instagram" | "tiktok" | "actions"
+          previous_text: previousText,
+          nonce: Date.now(),
+          selected_item: selectedItem,
+        }),
+      });
 
-  } catch (err) {
-    setError(err.message);
-  } finally {
-    setRefreshing((prev) => ({ ...prev, [platform]: false }));
-  }
-};
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.detail || 'Failed to refresh content');
+      }
+
+      const data = await response.json();
+
+      // data = { platform: "...", data: {...} }
+      setContent((prev) => {
+        if (!prev) return prev;
+
+        if (platform === "instagram") {
+          return { ...prev, instagram: data.data };
+        }
+        if (platform === "tiktok") {
+          return { ...prev, tiktok: data.data };
+        }
+        if (platform === "actions") {
+          // Convert actions list back into promotion_ideas objects so UI stays compatible
+          const actions = data.data.actions || [];
+          return {
+            ...prev,
+            promotion_ideas: actions.map((text) => ({ text, reason: "Refreshed suggestion" })),
+          };
+        }
+
+        return prev;
+      });
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRefreshing((prev) => ({ ...prev, [platform]: false }));
+    }
+  };
 
   return (
     <div className="app">
@@ -372,97 +367,97 @@ const getPercentClass = (percent) => {
                   ))}
                 </ul>
               </div>
-                                            <div className="summary-card comparison-card">
-                                              <h3>Change vs Previous CSV</h3>
+              
+              <div className="summary-card comparison-card">
+                <h3>Change vs Previous CSV</h3>
 
-                                              {!summary?.top5_panels ? (
-                                                <div className="comparison-empty-state">
-                                                  Upload a second CSV to see comparison.
-                                                </div>
-                                              ) : (
-                                                <div className="comparison-grid-3">
-                                                  {/* Column 1 */}
-                                                  <div>
-                                                    <div className="comparison-col-title">PREVIOUS TOP 5</div>
-                                                    <ul>
-                                                      {summary.top5_panels.old_top5_comparison.map((row, idx) => (
-                                                        <li key={idx} className="item-row comparison-panel-row">
-                                                          <span className="item-name">{row.item_name}</span>
-                                                          <div className="item-stats">
-                                                            <span className="comparison-ranks">#{row.prev_rank}</span>
-                                                            <span className="comparison-counts">{row.prev_qty} units</span>
-                                                          </div>
-                                                        </li>
-                                                      ))}
-                                                    </ul>
-                                                  </div>
+                {!summary?.top5_panels ? (
+                  <div className="comparison-empty-state">
+                    Upload a second CSV to see comparison.
+                  </div>
+                ) : (
+                  <div className="comparison-grid-3">
+                    {/* Column 1 */}
+                    <div>
+                      <div className="comparison-col-title">PREVIOUS TOP 5</div>
+                      <ul>
+                        {summary.top5_panels.old_top5_comparison.map((row, idx) => (
+                          <li key={idx} className="item-row comparison-panel-row">
+                            <span className="item-name">{row.item_name}</span>
+                            <div className="item-stats">
+                              <span className="comparison-ranks">#{row.prev_rank}</span>
+                              <span className="comparison-counts">{row.prev_qty} units</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
 
-                                                  {/* Column 2 */}
-                                                  <div>
-                                                    <div className="comparison-col-title">OLD TOP 5 → CURRENT</div>
-                                                    <ul>
-                                                      {summary.top5_panels.old_top5_comparison.map((row, idx) => {
-                                                        const statusText = row.status || "";
-                                                        const lowerStatus = statusText.toLowerCase();
+                    {/* Column 2 */}
+                    <div>
+                      <div className="comparison-col-title">OLD TOP 5 → CURRENT</div>
+                      <ul>
+                        {summary.top5_panels.old_top5_comparison.map((row, idx) => {
+                          const statusText = row.status || "";
+                          const lowerStatus = statusText.toLowerCase();
 
-                                                        let statusClass = "status-neutral";
-                                                        if (lowerStatus.includes("still")) statusClass = "status-good";
-                                                        else if (lowerStatus.includes("dropped")) statusClass = "status-bad";
-                                                        else if (lowerStatus.includes("entered") || lowerStatus.includes("new")) statusClass = "status-info";
+                          let statusClass = "status-neutral";
+                          if (lowerStatus.includes("still")) statusClass = "status-good";
+                          else if (lowerStatus.includes("dropped")) statusClass = "status-bad";
+                          else if (lowerStatus.includes("entered") || lowerStatus.includes("new")) statusClass = "status-info";
 
-                                                        let rowClass = "comparison-panel-row";
-                                                        if (lowerStatus.includes("still")) rowClass += " row-still";
-                                                        else if (lowerStatus.includes("dropped")) rowClass += " row-dropped";
-                                                        else if (lowerStatus.includes("entered") || lowerStatus.includes("new")) rowClass += " row-entered";
+                          let rowClass = "comparison-panel-row";
+                          if (lowerStatus.includes("still")) rowClass += " row-still";
+                          else if (lowerStatus.includes("dropped")) rowClass += " row-dropped";
+                          else if (lowerStatus.includes("entered") || lowerStatus.includes("new")) rowClass += " row-entered";
 
-                                                        return (
-                                                          <li key={idx} className={`item-row ${rowClass}`}>
-                                                            <span className="item-name">{row.item_name}</span>
+                          return (
+                            <li key={idx} className={`item-row ${rowClass}`}>
+                              <span className="item-name">{row.item_name}</span>
 
-                                                            <div className="item-stats comparison-middle-stats">
-                                                              <span className="comparison-counts comparison-shift">
-                                                                <span className="old-units">{row.prev_qty}</span>
-                                                                <span className="comparison-arrow">→</span>
-                                                                <span className="new-units">{row.curr_qty}</span>
-                                                              </span>
+                              <div className="item-stats comparison-middle-stats">
+                                <span className="comparison-counts comparison-shift">
+                                  <span className="old-units">{row.prev_qty}</span>
+                                  <span className="comparison-arrow">→</span>
+                                  <span className="new-units">{row.curr_qty}</span>
+                                </span>
 
-                                                              <span className={`change comparison-percent ${
-                                                                row.pct_change > 0 ? "pos" : row.pct_change < 0 ? "neg" : "neutral"
-                                                              }`}>
-                                                                {row.pct_change === null || row.pct_change === undefined
-                                                                  ? "—"
-                                                                  : `${row.pct_change > 0 ? "+" : ""}${row.pct_change.toFixed(1)}%`}
-                                                              </span>
+                                <span className={`change comparison-percent ${
+                                  row.pct_change > 0 ? "pos" : row.pct_change < 0 ? "neg" : "neutral"
+                                }`}>
+                                  {row.pct_change === null || row.pct_change === undefined
+                                    ? "—"
+                                    : `${row.pct_change > 0 ? "+" : ""}${row.pct_change.toFixed(1)}%`}
+                                </span>
 
-                                                              <span className={`comparison-status-badge ${statusClass}`}>
-                                                                {row.status}
-                                                              </span>
-                                                            </div>
-                                                          </li>
-                                                        );
-                                                      })}
-                                                    </ul>
-                                                  </div>
+                                <span className={`comparison-status-badge ${statusClass}`}>
+                                  {row.status}
+                                </span>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
 
-                                                  {/* Column 3 */}
-                                                  <div>
-                                                    <div className="comparison-col-title">CURRENT TOP 5</div>
-                                                    <ul>
-                                                      {summary.top5_panels.new_top5.map((row, idx) => (
-                                                        <li key={idx} className="item-row comparison-panel-row">
-                                                          <span className="item-name">{row.item_name}</span>
-                                                          <div className="item-stats">
-                                                            <span className="comparison-ranks">#{row.curr_rank}</span>
-                                                            <span className="comparison-counts">{row.curr_qty} units</span>
-                                                          </div>
-                                                        </li>
-                                                      ))}
-                                                    </ul>
-                                                  </div>
-                                                </div>
-                                              )}
-                                            </div>
-
+                    {/* Column 3 */}
+                    <div>
+                      <div className="comparison-col-title">CURRENT TOP 5</div>
+                      <ul>
+                        {summary.top5_panels.new_top5.map((row, idx) => (
+                          <li key={idx} className="item-row comparison-panel-row">
+                            <span className="item-name">{row.item_name}</span>
+                            <div className="item-stats">
+                              <span className="comparison-ranks">#{row.curr_rank}</span>
+                              <span className="comparison-counts">{row.curr_qty} units</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <button
@@ -482,33 +477,43 @@ const getPercentClass = (percent) => {
               )}
             </button>
           
-          <div className="summary-card focus-card">
-  <h3>Content Focus</h3>
-  <label htmlFor="top-item-select" className="focus-label">
-    Choose which top item the content should focus on:
-  </label>
+            {/* NEW CONTENT FOCUS DROPDOWN WITH CUSTOM OPTION */}
+            <div className="summary-card focus-card">
+              <h3>Content Focus</h3>
+              <label htmlFor="top-item-select" className="focus-label">
+                Choose which item the content should focus on:
+              </label>
 
-  <select
-    id="top-item-select"
-    className="focus-select"
-    value={selectedItem}
-    onChange={(e) => setSelectedItem(e.target.value)}
-  >
-    {summary.top_items?.map((item, idx) => (
-      <option key={idx} value={item.item_name}>
-        {item.item_name}
-      </option>
-    ))}
-  </select>
+              <select
+                id="top-item-select"
+                className="focus-select"
+                value={selectedItem}
+                onChange={(e) => setSelectedItem(e.target.value)}
+              >
+                {summary.top_items?.map((item, idx) => (
+                  <option key={idx} value={item.item_name}>
+                    {item.item_name} ({item.quantity} units)
+                  </option>
+                ))}
+                <option value="__custom__">✏️ Other (type below)</option>
+              </select>
 
-  {selectedItem && (
-    <p className="focus-hint">
-      Generated content will focus on <strong>{selectedItem}</strong>.
-    </p>
-  )}
-</div>
+              {selectedItem === "__custom__" && (
+                <input
+                  type="text"
+                  className="focus-input"
+                  placeholder="Enter any item name..."
+                  onChange={(e) => setSelectedItem(e.target.value)}
+                />
+              )}
+
+              {selectedItem && selectedItem !== "__custom__" && selectedItem !== "" && (
+                <p className="focus-hint">
+                  🎯 Generated content will focus on <strong>{selectedItem}</strong>.
+                </p>
+              )}
+            </div>
           </section>
-          
         )}
 
         {loading && loadingStatus && !content && summary && (
@@ -532,10 +537,10 @@ const getPercentClass = (percent) => {
           <section className="content-section">
             <h2>Generated Content</h2>
             <ContentDisplay
-            content={content}
-            onRefresh={handleRefresh}
-            refreshing={refreshing}
-            selectedItem={selectedItem}
+              content={content}
+              onRefresh={handleRefresh}
+              refreshing={refreshing}
+              selectedItem={selectedItem}
             />
           </section>
         )}
@@ -549,4 +554,3 @@ const getPercentClass = (percent) => {
 }
 
 export default App
-
